@@ -1,0 +1,25 @@
+.DS_Store
+**/.DS_Store
+.superpowers/
+Douglace_K_CV_Developpeur_Fullstack_Laravel.pdf
+
+# Secrets et environnements locaux
+.env
+.env.*
+!.env.example
+
+# Laravel
+apps/platform/vendor/
+apps/platform/node_modules/
+apps/platform/public/build/
+apps/platform/storage/*.key
+apps/platform/storage/logs/*.log
+
+# Flutter
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/build/
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
