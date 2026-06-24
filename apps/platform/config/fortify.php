@@ -161,7 +161,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Inscription publique désactivée : les comptes sont créés par Fusy ou un admin d'organisation.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
