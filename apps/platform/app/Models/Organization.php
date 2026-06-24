@@ -10,6 +10,7 @@ use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -64,5 +65,13 @@ class Organization extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * @return HasOne<FuelAccount, $this>
+     */
+    public function fuelAccount(): HasOne
+    {
+        return $this->hasOne(FuelAccount::class);
     }
 }

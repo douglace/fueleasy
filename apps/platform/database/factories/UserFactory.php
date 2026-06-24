@@ -55,22 +55,34 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function enterpriseAdmin(?Organization $organization = null): static
+    /**
+     * @param  Organization|Factory<Organization>|null  $organization
+     */
+    public function enterpriseAdmin($organization = null): static
     {
         return $this->forOrganization($organization ?? Organization::factory()->enterprise(), Role::EnterpriseAdmin);
     }
 
-    public function stationAdmin(?Organization $organization = null): static
+    /**
+     * @param  Organization|Factory<Organization>|null  $organization
+     */
+    public function stationAdmin($organization = null): static
     {
         return $this->forOrganization($organization ?? Organization::factory()->station(), Role::StationAdmin);
     }
 
-    public function driver(?Organization $organization = null): static
+    /**
+     * @param  Organization|Factory<Organization>|null  $organization
+     */
+    public function driver($organization = null): static
     {
         return $this->mobile($organization ?? Organization::factory()->enterprise(), Role::Driver);
     }
 
-    public function pompiste(?Organization $organization = null): static
+    /**
+     * @param  Organization|Factory<Organization>|null  $organization
+     */
+    public function pompiste($organization = null): static
     {
         return $this->mobile($organization ?? Organization::factory()->station(), Role::Pompiste);
     }
