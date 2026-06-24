@@ -4,6 +4,7 @@ use App\Domain\Identity\MobileAuthException;
 use App\Domain\Payments\PaymentException;
 use App\Domain\Shared\DomainException;
 use App\Http\Middleware\AuthenticateMobile;
+use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'auth.mobile' => AuthenticateMobile::class,
+            'role' => EnsureRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

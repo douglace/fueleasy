@@ -92,6 +92,16 @@ class User extends Authenticatable implements PasskeyUser
         return $this->role === Role::FusyAdmin;
     }
 
+    public function isEnterpriseAdmin(): bool
+    {
+        return $this->role === Role::EnterpriseAdmin;
+    }
+
+    public function isStationAdmin(): bool
+    {
+        return $this->role === Role::StationAdmin;
+    }
+
     public function isActive(): bool
     {
         return $this->status === UserStatus::Active;
