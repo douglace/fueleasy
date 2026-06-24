@@ -87,6 +87,21 @@ class WorkSessionController extends Controller
     }
 
     /**
+     * Accusé de réception d'une alerte de paiement (désactive le SMS de secours).
+     */
+    public function acknowledge(Request $request, Payment $payment): JsonResponse
+    {
+        $pompiste = $this->assertPompiste($request);
+        abort_unless($payment->station_organization_id === $pompiste->organization_id, Response::HTTP_FORBIDDEN);
+
+        if ($payment->alert_acknowledged_at === null) {
+            $payment->forceFill(['alert_acknowledged_at' => now()])->save();
+        }
+
+        return response()->json(['acknowledged' => true]);
+    }
+
+    /**
      * Recherche d'une transaction par code court (vérification avant de servir).
      */
     public function search(Request $request): JsonResponse

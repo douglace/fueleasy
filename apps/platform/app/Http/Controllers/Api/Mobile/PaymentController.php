@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Mobile;
 
+use App\Application\Operations\ReceiptRenderer;
 use App\Application\Payments\CapturePayment;
 use App\Application\Payments\CreatePaymentSession;
 use App\Application\Payments\ResolveScan;
@@ -88,6 +89,21 @@ class PaymentController extends Controller
         abort_unless($payment->driver_id === $driver->id, Response::HTTP_FORBIDDEN);
 
         return (new PaymentResource($payment))->response();
+    }
+
+    /**
+     * Reçu PDF d'un paiement réglé.
+     */
+    public function receipt(Request $request, Payment $payment, ReceiptRenderer $renderer): Response
+    {
+        $driver = $this->assertDriver($request);
+        abort_unless($payment->driver_id === $driver->id, Response::HTTP_FORBIDDEN);
+        abort_unless($payment->isPaid(), Response::HTTP_CONFLICT, 'Reçu disponible uniquement pour un paiement réglé.');
+
+        return response($renderer->receiptPdf($payment), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="recu-'.$payment->reference.'.pdf"',
+        ]);
     }
 
     /**

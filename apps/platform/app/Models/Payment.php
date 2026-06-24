@@ -45,6 +45,7 @@ class Payment extends Model
         'station_organization_id', 'pump_id', 'work_session_id', 'pompiste_id',
         'via', 'fuel_type', 'amount', 'status', 'failure_reason',
         'expires_at', 'confirmed_at', 'ledger_entry_id', 'settled_batch_id',
+        'alert_acknowledged_at', 'alert_sms_sent_at',
     ];
 
     protected function casts(): array
@@ -56,6 +57,8 @@ class Payment extends Model
             'status' => PaymentStatus::class,
             'expires_at' => 'datetime',
             'confirmed_at' => 'datetime',
+            'alert_acknowledged_at' => 'datetime',
+            'alert_sms_sent_at' => 'datetime',
         ];
     }
 

@@ -31,6 +31,7 @@ Route::prefix('v1/mobile')->group(function (): void {
         Route::post('payments', [PaymentController::class, 'store']);
         Route::get('payments/by-key', [PaymentController::class, 'byIdempotencyKey']);
         Route::get('payments/{payment}', [PaymentController::class, 'show']);
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt']);
         Route::post('payments/{payment}/confirm', [PaymentController::class, 'confirm']);
 
         // Pompiste — sessions et alertes.
@@ -39,5 +40,6 @@ Route::prefix('v1/mobile')->group(function (): void {
         Route::get('work-sessions/current/qr', [WorkSessionController::class, 'currentQr']);
         Route::get('station/payments/today', [WorkSessionController::class, 'todaysPayments']);
         Route::get('station/payments/search', [WorkSessionController::class, 'search']);
+        Route::post('station/payments/{payment}/ack', [WorkSessionController::class, 'acknowledge']);
     });
 });

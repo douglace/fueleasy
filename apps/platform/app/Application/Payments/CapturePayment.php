@@ -12,6 +12,7 @@ use App\Domain\Payments\PaymentException;
 use App\Domain\Payments\PaymentFailureReason;
 use App\Domain\Payments\PaymentStatus;
 use App\Domain\Shared\Money;
+use App\Jobs\SendPaymentAlertFallback;
 use App\Models\DriverBudget;
 use App\Models\FuelAccount;
 use App\Models\LedgerEntry;
@@ -55,7 +56,14 @@ final class CapturePayment
         $this->verifyDriverPin($payment->driver_id, $pin, $now);
 
         // Phase 3 — débit atomique.
-        return $this->captureAtomically($payment, $idempotencyKey, $now);
+        $captured = $this->captureAtomically($payment, $idempotencyKey, $now);
+
+        // Alerte pompiste : SMS de secours si pas d'accusé de réception dans les délais.
+        if ($captured->isPaid() && $captured->pompiste_id !== null) {
+            SendPaymentAlertFallback::dispatch($captured->id)->afterCommit()->delay(now()->addSeconds(30));
+        }
+
+        return $captured;
     }
 
     private function resolveTerminalState(Payment $payment, Carbon $now): ?Payment
