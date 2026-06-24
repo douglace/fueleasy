@@ -44,7 +44,7 @@ class Payment extends Model
         'reference', 'short_code', 'idempotency_key', 'organization_id', 'driver_id',
         'station_organization_id', 'pump_id', 'work_session_id', 'pompiste_id',
         'via', 'fuel_type', 'amount', 'status', 'failure_reason',
-        'expires_at', 'confirmed_at', 'ledger_entry_id',
+        'expires_at', 'confirmed_at', 'ledger_entry_id', 'settled_batch_id',
     ];
 
     protected function casts(): array

@@ -1,5 +1,25 @@
 # Lessons — apps/platform
 
+## 2026-06-24 — Double comptage du reversement après remboursement
+
+**Symptôme** : `pendingAmount` d'une station valait 40 000 au lieu de 50 000 après remboursement d'un paiement de 10 000 (sur 60 000 de ventes).
+
+**Cause** : un paiement remboursé passe en statut `Refunded`, donc il quitte déjà la somme des paiements `Paid`. Déduire EN PLUS le montant du remboursement le comptait deux fois. La déduction d'un remboursement ne doit s'appliquer qu'aux paiements **déjà reversés** (`payments.settled_batch_id IS NOT NULL`) — argent déjà versé à la station, à reprendre.
+
+**Correction** : `SettlementService::pendingAmount` et `generateForStation` filtrent les remboursements déductibles sur `payments.settled_batch_id IS NOT NULL` (`app/Application/Operations/SettlementService.php`).
+
+**Pour la prochaine fois** : tout calcul de solde net mêlant changement de statut ET écriture compensatoire ⇒ vérifier qu'un même montant n'est pas retiré deux fois (une fois par le statut, une fois par la compensation).
+
+## 2026-06-24 — FK sur un id codé en dur casse en fin de suite (séquences PG)
+
+**Symptôme** : un test passant isolément échoue avec `FK violation: Key (decided_by)=(1) is not present in users` quand il s'exécute après d'autres tests.
+
+**Cause** : sous `RefreshDatabase` (transactions enveloppantes), un rollback n'annule PAS l'avancement des séquences PostgreSQL. Les `id` augmentent de test en test, donc `id = 1` n'existe plus dans les tests tardifs. Coder un id en dur (`decidedBy: 1`) est fragile.
+
+**Correction** : créer l'acteur réel dans le test (`User::factory()->fusyAdmin()->create()`) et utiliser `$admin->id`.
+
+**Pour la prochaine fois** : « Key (...)=(1) is not present » intermittent selon l'ordre des tests ⇒ id codé en dur, créer l'entité.
+
 ## 2026-06-24 — Désactiver une feature Fortify casse le build Wayfinder
 
 **Symptôme** : après retrait de `Features::registration()` de `config/fortify.php`, `npm run build` échoue (ou les pages référencent un export inexistant) car `resources/js/pages/*.tsx` importaient `{ register } from '@/routes'`.
