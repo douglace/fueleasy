@@ -41,7 +41,7 @@ Le script `composer test` enchaîne `lint:check` + `types:check` + `php artisan 
 
 - **Backend** : Laravel 13, PHP ^8.3. Auth via **Fortify** (2FA + passkeys déjà câblés, voir `app/Providers/FortifyServiceProvider.php`). Style imposé par **Pint** (`pint.json`), analyse **PHPStan/larastan level 7** sur `app/`, `config/`, `database/`, `routes/`, `bootstrap/app.php`.
 - **Frontend** : **Inertia + React 19 + TypeScript**, Tailwind 4, composants Radix/shadcn (`components.json`), Vite 8. Lint ESLint + Prettier (`prettier-plugin-tailwindcss`).
-- **Base de données** : **PostgreSQL** en dev/prod (`DB_CONNECTION=pgsql`, base `fusy`) ; **SQLite `:memory:`** en test (voir `phpunit.xml`). Sessions, cache et queue sur driver `database`.
+- **Base de données** : **PostgreSQL** en dev/prod (`DB_CONNECTION=pgsql`, base `fusy`) **et en test** (base `fusy_testing`, voir `phpunit.xml`). Le schéma utilise des fonctionnalités PostgreSQL natives (index uniques partiels, triggers d'immutabilité du ledger, verrous `FOR UPDATE`) ; SQLite n'est pas supporté. Les tests de concurrence (`PaymentConcurrencyTest`) utilisent `pcntl_fork` pour de vrais processus parallèles. Sessions, cache et queue sur driver `database`.
 
 ### Wayfinder & routes typées (piège important)
 
@@ -57,7 +57,7 @@ Le doc `apps/platform/docs/architecture.md` décrit la cible :
 - `resources/js` — dashboards Inertia React par organisation/rôle.
 - `routes/web.php` — dashboards web ; `routes/api.php` — API mobile versionnée.
 
-**État actuel** : le projet part du `laravel/react-starter-kit`. Seuls existent `app/{Actions,Concerns,Http,Models,Providers}` ; les couches `Domain` et `Application` sont à créer au fur et à mesure des sprints. `routes/api.php` n'expose qu'un `/health`. Ne pas supposer que la structure cible est déjà en place — vérifier avant de référencer un namespace.
+**État actuel** : la plateforme V3 est implémentée. Les couches `app/Domain` (Organizations, Identity, FuelAccounts, DriverBudgets, Stations, Payments, Operations, Demo, Shared) et `app/Application` (mêmes modules) sont en place. `routes/api.php` expose l'API mobile versionnée `v1/mobile` (auth PIN/appareil, scan, paiement, reçus, alertes pompiste). `routes/web.php` expose les dashboards Inertia Admin Fusy / Entreprise / Station (RBAC via middleware `role:`). `routes/console.php` planifie les jobs (expiration paiements, reset budgets, reversements). Vérifier les namespaces existants avant d'ajouter du code.
 
 ## Modèle métier (à implémenter)
 
@@ -67,15 +67,20 @@ Flux transaction de référence (voir `plan_mvp/00_OVERVIEW.md` §5) : le chauff
 
 Distinction structurante à préserver dans l'UI et le code : le **budget chauffeur** (enveloppe d'autorisation) n'est pas le **solde du compte carburant entreprise** (argent réel prépayé). Un reset de budget *remplace* le solde restant, il ne l'additionne pas.
 
-## À venir (pas encore dans le dépôt)
+## État livré & à venir
 
-Ces éléments sont planifiés mais non implémentés à ce jour — ne pas supposer qu'ils existent, mettre à jour cette section quand ils arrivent.
+- **App mobile Flutter** (`apps/mobile/`) — **hors périmètre de ce dépôt**. Tous les contrats API nécessaires sont opérationnels et testés sous `routes/api.php` (`v1/mobile`). À sa création, documenter ici les commandes Flutter.
+- **Déploiement** — runbook manuel VPS documenté dans [`docs/RUNBOOK_DEPLOIEMENT.md`](apps/platform/docs/RUNBOOK_DEPLOIEMENT.md) (migrations, build, queue + scheduler, sauvegarde, rollback).
+- **Seeders pilote** — `database/seeders/DatabaseSeeder.php` seede un environnement pilote complet (Admin Fusy `admin@fusy.test`/`password`, entreprise créditée + chauffeurs/budgets, station + pompe + pompiste, autorisation, organisation démo). Idempotent. Lancer : `php artisan migrate:fresh --seed`.
+- **Checklist d'implémentation** : [`docs/IMPLEMENTATION_CHECKLIST.md`](apps/platform/docs/IMPLEMENTATION_CHECKLIST.md).
 
-- **App mobile Flutter** (`apps/mobile/`) — interface chauffeur (Android + iOS) ou pompiste (Android) selon le rôle du compte. Consommera l'API de `apps/platform` (`routes/api.php`). Le dossier n'existe pas encore ; documenter ici les commandes Flutter (`flutter run`, `flutter test`, build) à sa création.
-- **Déploiement** — cible : **staging + production sur VPS, déploiement manuel documenté** + scripts de sauvegarde (voir `plan_mvp/08_SPRINT_08_pilote_qa_deploiement.md`). Aucun runbook ni script n'existe encore. Documenter la procédure ici dès qu'elle est écrite.
-- **Seeders métier** — seul `database/seeders/DatabaseSeeder.php` (vide/par défaut) existe. Quand des comptes de démo (admin Fusy, entreprise, station, pompiste, chauffeur) seront ajoutés, documenter ici comment seeder un environnement pilote.
+### Préparer la base de test (PostgreSQL)
 
-Les tests des flux critiques attendus pour le pilote (crédit compte, blocages, transaction réussie/refusée/expirée, confirmation PIN, reçus, exports, lots de reversement) sont listés dans `plan_mvp/08_SPRINT_08_pilote_qa_deploiement.md` §2 — s'y référer pour la couverture cible.
+```bash
+createdb fusy && createdb fusy_testing   # une fois
+php artisan migrate                       # base dev
+php artisan test                          # tourne sur fusy_testing (voir phpunit.xml)
+```
 
 ## Bug tracking
 

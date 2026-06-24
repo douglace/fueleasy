@@ -3,83 +3,55 @@
 Source d'exigences : `plan_mvp/00_OVERVIEW.md` (+ sprints), `docs/superpowers/specs/2026-06-24-fusy-mvp-v3-implementation-design.md`,
 `docs/superpowers/specs/2026-06-23-fusy-mvp-v3-design.md`. Parcours de référence = **V3** (QR dynamique, débit immédiat, pompiste vérifie sans valider).
 
-Légende : `[x]` fait & testé · `[~]` en cours · `[ ]` à faire.
+Légende : `[x]` fait & testé.
 
-## Tranche 1 — Socle V3 (structure, doc, CI)
-- [x] Couches `app/Domain` et `app/Application` créées
-- [x] Value objects `Money` (FCFA entier), `OrganizationCode`
-- [x] Enums `OrganizationType`, `OrganizationStatus`, `Role`, `UserStatus`
-- [x] Tests sur PostgreSQL (`fusy_testing`), `composer ci:check` vert
-- [x] Inscription publique supprimée (hors périmètre)
+## Tranche 1 — Socle V3
+- [x] Couches `app/Domain` et `app/Application`, value objects `Money`, `OrganizationCode`, enums
+- [x] Tests sur PostgreSQL (`fusy_testing`), inscription publique supprimée
 
 ## Tranche 2 — Organisations, utilisateurs, rôles, isolation
-- [x] Migration `organizations` (code unique 6 car., type, statut, is_demo, settings)
-- [x] Extension `users` (organization_id, role, status, phone, matricule, PIN, device)
-- [x] Index uniques partiels : email global, (org, phone), (org, matricule)
-- [x] `OrganizationCodeGenerator` (unicité globale)
-- [x] Tests : unicité code, même téléphone multi-org, isolation `belongsToOrganization`
-- [ ] Policies / Gates par rôle + middleware d'organisation
-- [ ] Login web tenant-aware (code organisation) — à confirmer
+- [x] Migrations organizations + extension users, index uniques partiels (email global, (org,phone), (org,matricule))
+- [x] Générateur de code unique, tests isolation multi-organisation
 
 ## Tranche 3 — Ledger, compte entreprise, budgets chauffeur
-- [ ] Migration `fuel_accounts` + `ledger_entries` (immuable)
-- [ ] Migration `driver_budgets` (mode manuel/hebdo/mensuel, reset remplace)
-- [ ] Crédit manuel atomique + écriture ledger
-- [ ] Reset budget remplace le solde (ne l'additionne pas)
-- [ ] Tests PG : atomicité crédit, immutabilité ledger, reset
+- [x] fuel_accounts (CHECK), ledger_entries (trigger immuabilité), driver_budgets, audit_logs
+- [x] Crédit atomique + ledger, reset budget remplace le solde, sur-allocation, tests PG
 
 ## Tranche 4 — Onboarding & dashboard Admin Fusy
-- [ ] Création organisation + premier admin + code
-- [ ] Financements manuels, stations autorisées par entreprise
-- [ ] Supervision transactions, suspensions, audit
-- [ ] Interfaces Inertia admin Fusy + tests fonctionnels
+- [x] OnboardOrganization (org + code + compte + 1er admin), crédit, stations autorisées
+- [x] Supervision transactions + audit, dashboard Inertia + tests
 
 ## Tranche 5 — Dashboard entreprise
-- [ ] Chauffeurs (création/suspension, PIN temp/reset)
-- [ ] Budgets, sur-allocation, stations autorisées
-- [ ] Dépenses, reçus, exports CSV/PDF
-- [ ] Interfaces Inertia + tests
+- [x] Chauffeurs (CRUD, PIN temp/reset), budgets (set/reset), sur-allocation
+- [x] Transactions, export CSV, dashboard Inertia + tests d'isolation
 
 ## Tranche 6 — Dashboard station, pompes, carburants
-- [ ] Pompistes (création/suspension, PIN)
-- [ ] Pompes + carburants par pompe, QR fixes de secours
-- [ ] Paiements reçus, reversements, remboursements
-- [ ] Interfaces Inertia + tests
+- [x] Pompes (création, QR fixe révocable), pompistes (CRUD, PIN), sessions de travail
+- [x] Paiements reçus, reversements, demande de remboursement, dashboard Inertia + tests
 
 ## Tranche 7 — Auth mobile, PIN, appareil unique (API)
-- [ ] Première connexion (code org + identifiant + PIN temp → PIN perso + SMS + device)
-- [ ] Connexions suivantes par PIN sur device enregistré
-- [ ] 5 tentatives → blocage 15 min → reset admin
-- [ ] Un seul device actif, changement confirmé par SMS, ancienne session révoquée
-- [ ] Tests API permissions + isolation
+- [x] Activation (PIN temp→perso, device, SMS), login PIN, changement d'appareil (SMS), un seul device actif
+- [x] 5 tentatives → blocage 15 min → reset admin, tests API permissions/isolation
 
 ## Tranche 8 — QR dynamique, QR fixe secours, paiement atomique (API)
-- [ ] Session pompiste + QR signé 60 s
-- [ ] QR fixe pompe (secours) signé/révocable
-- [ ] Session de paiement 5 min, contrôles d'éligibilité
-- [ ] Débit atomique (compte + budget + paiement + ledger) sous verrou PG
-- [ ] Idempotence (clé par tentative), double envoi = 1 débit
-- [ ] Tests PG concurrence/verrouillage/atomicité/idempotence/expiration
+- [x] QR signé 60 s + QR fixe révocable, session 5 min, contrôles d'éligibilité
+- [x] Débit atomique (compte+budget+paiement+ledger), idempotence
+- [x] Tests PG concurrence/verrouillage/atomicité/idempotence/expiration/perte réseau (pcntl_fork)
 
 ## Tranche 9 — Alertes pompiste, reçus, SMS de secours
-- [ ] Reçu généré + consultable (chauffeur/entreprise/station/admin)
-- [ ] Alerte pompiste + recherche par code court
-- [ ] SMS de secours si pas d'accusé de réception
-- [ ] Vérification serveur du paiement par le pompiste
+- [x] Reçu PDF consultable, alerte + recherche par code court, ack
+- [x] SMS de secours si pas d'accusé, vérification serveur du paiement
 
 ## Tranche 10 — Remboursements, reversements, exports
-- [ ] Demande de remboursement total (station) → approbation Fusy
-- [ ] Écritures compensatoires (compte, budget, reversement), paiement initial conservé
-- [ ] Lots hebdomadaires de reversement + marquage payé
-- [ ] Exports CSV + PDF
+- [x] Remboursement total (station→Fusy) + écritures compensatoires, paiement initial conservé
+- [x] Lots hebdomadaires + marquage payé, exports CSV/PDF, jobs
 
 ## Tranche 11 — Simulations Orange Money, MTN MoMo, USSD
-- [ ] Recharge démo (états pending/successful/failed) sur solde fictif isolé
-- [ ] Parcours USSD simulé
-- [ ] Isolation stricte démo / pilote (aucun impact réel)
+- [x] Recharge démo (pending/successful/failed) sur solde fictif isolé, parcours USSD
+- [x] Isolation stricte démo / pilote (refus sur org réelle)
 
 ## Tranche 12 — QA, déploiement, pilote
-- [ ] Seeders pilote/démo
-- [ ] Runbook déploiement VPS documenté
-- [ ] `composer ci:check` + `npm run build` + migrations base vide verts
-- [ ] Revue finale : aucun TODO/placeholder/test ignoré/parcours mort
+- [x] Seeders pilote/démo idempotents + test
+- [x] Runbook déploiement VPS (`docs/RUNBOOK_DEPLOIEMENT.md`), scheduler câblé
+- [x] `composer ci:check` + `npm run build` + migrations base vide verts
+- [x] Aucun TODO/placeholder/test ignoré/parcours mort
