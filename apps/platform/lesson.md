@@ -1,5 +1,25 @@
 # Lessons — apps/platform
 
+## 2026-06-25 — `php artisan serve` écrase l'env du conteneur avec le .env
+
+**Symptôme** : en Docker, les migrations passaient (connexion à `db`) mais les pages web renvoyaient 500 avec `SQLSTATE[08006] connection to server at "127.0.0.1" port 5432 failed`. `config('database.connections.pgsql.host')` via `tinker` retournait pourtant `db`.
+
+**Cause** : `php artisan serve` lit le fichier `.env` et **passe ces valeurs au sous-process du serveur PHP**, écrasant les variables d'environnement héritées du conteneur. Le `.env` (issu de `.env.example`) contenait `DB_HOST=127.0.0.1`. Les commandes directes (migrate, tinker) voyaient l'env Docker (`db`) ; le serveur, lui, recevait `127.0.0.1` du `.env`. D'où l'incohérence.
+
+**Correction** : l'entrypoint Docker synchronise le `.env` avec les variables d'environnement du conteneur avant `artisan serve` (`docker-entrypoint.sh`, fonction `sync_env`).
+
+**Pour la prochaine fois** : migrations OK mais requêtes web KO sur le même host de DB en conteneur ⇒ suspecter le passthrough `.env` de `artisan serve`, pas la config Laravel.
+
+## 2026-06-25 — Image Docker PHP 8.3 vs composer.lock résolu en 8.4
+
+**Symptôme** : `composer install` dans le build Docker échoue : `symfony/* v8.1.0 requires php >=8.4.1 -> your php version (8.3.31) does not satisfy`.
+
+**Cause** : `composer.json` déclare `"php": "^8.3"` mais le `composer.lock` a été généré sur l'hôte en PHP 8.4.1, épinglant des paquets Symfony v8 exigeant 8.4.1. Une image de base `php:8.3` ne satisfait pas le lock.
+
+**Correction** : `Dockerfile` en `php:8.4-cli-bookworm` (aligné sur le lock et l'hôte).
+
+**Pour la prochaine fois** : erreur `requires php >= X -> your php version (Y)` au build ⇒ aligner l'image de base sur la version qui a généré `composer.lock`, pas seulement sur la contrainte de `composer.json`.
+
 ## 2026-06-24 — Double comptage du reversement après remboursement
 
 **Symptôme** : `pendingAmount` d'une station valait 40 000 au lieu de 50 000 après remboursement d'un paiement de 10 000 (sur 60 000 de ventes).
