@@ -11,8 +11,10 @@ use App\Application\Operations\TransactionExporter;
 use App\Domain\DriverBudgets\BudgetMode;
 use App\Domain\Identity\Role;
 use App\Domain\Identity\UserStatus;
+use App\Domain\Payments\PaymentStatus;
 use App\Domain\Shared\Money;
 use App\Http\Controllers\Controller;
+use App\Models\AuthorizedStation;
 use App\Models\DriverBudget;
 use App\Models\FuelAccount;
 use App\Models\Organization;
@@ -31,41 +33,72 @@ class EnterpriseDashboardController extends Controller
     {
         $org = $this->organizationId($request);
 
-        $drivers = User::query()
-            ->where('organization_id', $org)->where('role', Role::Driver)
-            ->orderByDesc('id')->get(['id', 'name', 'phone', 'matricule', 'status', 'pin_is_temporary'])
-            ->map(function (User $u): array {
-                $budget = DriverBudget::query()->where('user_id', $u->id)->first();
-
-                return [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'phone' => $u->phone,
-                    'matricule' => $u->matricule,
-                    'status' => $u->status->value,
-                    'pin_is_temporary' => $u->pin_is_temporary,
-                    'budget' => $budget === null ? null : [
-                        'mode' => $budget->mode->value,
-                        'amount' => $budget->amount,
-                        'balance' => $budget->balance,
-                    ],
-                ];
-            });
-
         return Inertia::render('enterprise/dashboard', [
             'balance' => (int) FuelAccount::query()->where('organization_id', $org)->value('balance'),
-            'drivers' => $drivers,
+            'stats' => [
+                'drivers' => User::query()->where('organization_id', $org)->where('role', Role::Driver)->count(),
+                'authorizedStations' => AuthorizedStation::query()->where('enterprise_organization_id', $org)->count(),
+                'paidPayments' => Payment::query()->where('organization_id', $org)->where('status', PaymentStatus::Paid)->count(),
+                'spentTotal' => (int) Payment::query()->where('organization_id', $org)->where('status', PaymentStatus::Paid)->sum('amount'),
+            ],
+            'recentTransactions' => Payment::query()
+                ->where('organization_id', $org)->with('station:id,name')
+                ->orderByDesc('id')->limit(8)->get()->map($this->mapPayment(...)),
+        ]);
+    }
+
+    public function drivers(Request $request): Response
+    {
+        $org = $this->organizationId($request);
+
+        return Inertia::render('enterprise/drivers', [
+            'drivers' => User::query()
+                ->where('organization_id', $org)->where('role', Role::Driver)
+                ->orderByDesc('id')->get(['id', 'name', 'phone', 'matricule', 'status', 'pin_is_temporary'])
+                ->map(function (User $u): array {
+                    $budget = DriverBudget::query()->where('user_id', $u->id)->first();
+
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'phone' => $u->phone,
+                        'matricule' => $u->matricule,
+                        'status' => $u->status->value,
+                        'pin_is_temporary' => $u->pin_is_temporary,
+                        'budget' => $budget === null ? null : [
+                            'mode' => $budget->mode->value,
+                            'amount' => $budget->amount,
+                            'balance' => $budget->balance,
+                        ],
+                    ];
+                }),
+        ]);
+    }
+
+    public function stations(Request $request): Response
+    {
+        $org = $this->organizationId($request);
+
+        return Inertia::render('enterprise/stations', [
+            'stations' => AuthorizedStation::query()
+                ->where('enterprise_organization_id', $org)->with('station:id,name,code,status')
+                ->get()->map(fn (AuthorizedStation $a): array => [
+                    'id' => $a->station->id,
+                    'name' => $a->station->name,
+                    'code' => $a->station->code,
+                    'status' => $a->station->status->value,
+                ]),
+        ]);
+    }
+
+    public function transactions(Request $request): Response
+    {
+        $org = $this->organizationId($request);
+
+        return Inertia::render('enterprise/transactions', [
             'transactions' => Payment::query()
                 ->where('organization_id', $org)->with('station:id,name')
-                ->orderByDesc('id')->limit(30)->get()
-                ->map(fn (Payment $p): array => [
-                    'id' => $p->id,
-                    'reference' => $p->reference,
-                    'amount' => $p->amount,
-                    'status' => $p->status->value,
-                    'station' => $p->station->name,
-                    'created_at' => $p->created_at?->toDateTimeString(),
-                ]),
+                ->orderByDesc('id')->limit(200)->get()->map($this->mapPayment(...)),
         ]);
     }
 
@@ -147,5 +180,21 @@ class EnterpriseDashboardController extends Controller
     private function assertOwnership(Request $request, User $driver): void
     {
         abort_unless($driver->organization_id === $request->user()?->organization_id, SymfonyResponse::HTTP_FORBIDDEN);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapPayment(Payment $p): array
+    {
+        return [
+            'id' => $p->id,
+            'reference' => $p->reference,
+            'amount' => $p->amount,
+            'status' => $p->status->value,
+            'fuel_type' => $p->fuel_type->value,
+            'station' => $p->station->name,
+            'created_at' => $p->created_at?->toDateTimeString(),
+        ];
     }
 }

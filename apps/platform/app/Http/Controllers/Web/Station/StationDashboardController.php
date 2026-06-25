@@ -30,29 +30,66 @@ class StationDashboardController extends Controller
     {
         $org = (int) $request->user()?->organization_id;
 
-        $pumps = Pump::query()->where('organization_id', $org)->orderBy('id')->get()
-            ->map(fn (Pump $p): array => [
-                'id' => $p->id,
-                'label' => $p->label,
-                'status' => $p->status->value,
-                'fixed_qr_active' => $p->fixed_qr_active,
-                'available_fuels' => $p->available_fuels ?? [],
-            ]);
-
-        $pompistes = User::query()->where('organization_id', $org)->where('role', Role::Pompiste)
-            ->orderByDesc('id')->get(['id', 'name', 'phone', 'matricule', 'status', 'pin_is_temporary']);
-
         $today = Payment::query()
             ->where('station_organization_id', $org)->where('status', PaymentStatus::Paid)
             ->whereDate('confirmed_at', now()->toDateString())->sum('amount');
 
         return Inertia::render('station/dashboard', [
-            'pumps' => $pumps,
-            'pompistes' => $pompistes,
+            'stats' => [
+                'todaySales' => (int) $today,
+                'pendingAmount' => $settlements->pendingAmount($org),
+                'pumps' => Pump::query()->where('organization_id', $org)->count(),
+                'pompistes' => User::query()->where('organization_id', $org)->where('role', Role::Pompiste)->count(),
+            ],
+            'recentPayments' => Payment::query()
+                ->where('station_organization_id', $org)->where('status', PaymentStatus::Paid)
+                ->with('enterprise:id,name')->orderByDesc('id')->limit(8)->get()->map($this->mapPayment(...)),
+        ]);
+    }
+
+    public function pumps(Request $request): Response
+    {
+        $org = (int) $request->user()?->organization_id;
+
+        return Inertia::render('station/pumps', [
+            'pumps' => Pump::query()->where('organization_id', $org)->orderBy('id')->get()
+                ->map(fn (Pump $p): array => [
+                    'id' => $p->id,
+                    'label' => $p->label,
+                    'status' => $p->status->value,
+                    'fixed_qr_active' => $p->fixed_qr_active,
+                    'available_fuels' => $p->available_fuels ?? [],
+                ]),
             'fuels' => array_map(fn (FuelType $f): array => ['value' => $f->value, 'label' => $f->label()], FuelType::cases()),
+        ]);
+    }
+
+    public function pompistes(Request $request): Response
+    {
+        $org = (int) $request->user()?->organization_id;
+
+        return Inertia::render('station/pompistes', [
+            'pompistes' => User::query()->where('organization_id', $org)->where('role', Role::Pompiste)
+                ->orderByDesc('id')->get(['id', 'name', 'phone', 'matricule', 'status', 'pin_is_temporary'])
+                ->map(fn (User $u): array => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'phone' => $u->phone,
+                    'matricule' => $u->matricule,
+                    'status' => $u->status->value,
+                    'pin_is_temporary' => $u->pin_is_temporary,
+                ]),
+        ]);
+    }
+
+    public function payments(Request $request): Response
+    {
+        $org = (int) $request->user()?->organization_id;
+
+        return Inertia::render('station/payments', [
             'payments' => Payment::query()
                 ->where('station_organization_id', $org)->with('enterprise:id,name')
-                ->orderByDesc('id')->limit(30)->get()
+                ->orderByDesc('id')->limit(200)->get()
                 ->map(fn (Payment $p): array => [
                     'id' => $p->id,
                     'reference' => $p->reference,
@@ -63,12 +100,24 @@ class StationDashboardController extends Controller
                     'fuel_type' => $p->fuel_type->value,
                     'confirmed_at' => $p->confirmed_at?->toDateTimeString(),
                 ]),
-            'settlement' => [
+        ]);
+    }
+
+    public function settlements(Request $request, SettlementService $settlements): Response
+    {
+        $org = (int) $request->user()?->organization_id;
+
+        $today = Payment::query()
+            ->where('station_organization_id', $org)->where('status', PaymentStatus::Paid)
+            ->whereDate('confirmed_at', now()->toDateString())->sum('amount');
+
+        return Inertia::render('station/settlements', [
+            'summary' => [
                 'today_sales' => (int) $today,
                 'pending_amount' => $settlements->pendingAmount($org),
-                'batches' => SettlementBatch::query()->where('station_organization_id', $org)
-                    ->orderByDesc('id')->limit(10)->get(['id', 'reference', 'net_amount', 'status', 'paid_at']),
             ],
+            'batches' => SettlementBatch::query()->where('station_organization_id', $org)
+                ->orderByDesc('id')->limit(50)->get(['id', 'reference', 'gross_sales', 'refunds_deducted', 'net_amount', 'status', 'paid_at']),
         ]);
     }
 
@@ -146,5 +195,22 @@ class StationDashboardController extends Controller
     private function assertOwnership(Request $request, int $organizationId): void
     {
         abort_unless($organizationId === $request->user()?->organization_id, SymfonyResponse::HTTP_FORBIDDEN);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapPayment(Payment $p): array
+    {
+        return [
+            'id' => $p->id,
+            'reference' => $p->reference,
+            'short_code' => $p->short_code,
+            'amount' => $p->amount,
+            'status' => $p->status->value,
+            'enterprise' => $p->enterprise->name,
+            'fuel_type' => $p->fuel_type->value,
+            'confirmed_at' => $p->confirmed_at?->toDateTimeString(),
+        ];
     }
 }

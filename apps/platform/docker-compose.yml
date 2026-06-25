@@ -22,6 +22,8 @@ services:
     environment:
       APP_NAME: Fusy
       APP_ENV: local
+      # Clé stable : évite d'invalider les sessions/CSRF à chaque rebuild d'image.
+      APP_KEY: base64:zCeTgPLJmnZpqi2UoqLE34RILhJxGUY/ybTEM0IYJvU=
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
       DB_CONNECTION: pgsql
@@ -48,6 +50,7 @@ services:
     environment:
       APP_NAME: Fusy
       APP_ENV: local
+      APP_KEY: base64:zCeTgPLJmnZpqi2UoqLE34RILhJxGUY/ybTEM0IYJvU=
       DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: "5432"

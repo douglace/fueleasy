@@ -15,6 +15,7 @@ use App\Models\AuthorizedStation;
 use App\Models\FuelAccount;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\RefundRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,9 +25,26 @@ class AdminDashboardController extends Controller
 {
     public function index(): Response
     {
+        return Inertia::render('admin/dashboard', [
+            'stats' => [
+                'enterprises' => Organization::query()->where('type', OrganizationType::Enterprise)->count(),
+                'stations' => Organization::query()->where('type', OrganizationType::Station)->count(),
+                'paidPayments' => Payment::query()->where('status', PaymentStatus::Paid)->count(),
+                'pendingRefunds' => RefundRequest::query()->where('status', 'pending')->count(),
+                'totalBalance' => (int) FuelAccount::query()->sum('balance'),
+            ],
+            'recentPayments' => Payment::query()
+                ->with(['station:id,name', 'enterprise:id,name'])
+                ->orderByDesc('id')->limit(8)->get()->map($this->mapPayment(...)),
+            'audit' => AuditLog::query()->orderByDesc('id')->limit(10)
+                ->get(['id', 'action', 'organization_id', 'created_at']),
+        ]);
+    }
+
+    public function organizations(): Response
+    {
         $organizations = Organization::query()
-            ->orderByDesc('id')
-            ->get(['id', 'code', 'type', 'name', 'status', 'is_demo'])
+            ->orderByDesc('id')->get(['id', 'code', 'type', 'name', 'status', 'is_demo'])
             ->map(fn (Organization $o): array => [
                 'id' => $o->id,
                 'code' => $o->code,
@@ -39,22 +57,41 @@ class AdminDashboardController extends Controller
                     : null,
             ]);
 
-        $recentPayments = Payment::query()
-            ->with(['station:id,name', 'enterprise:id,name'])
-            ->orderByDesc('id')->limit(20)->get()
-            ->map($this->mapPayment(...));
-
-        $audit = AuditLog::query()->orderByDesc('id')->limit(20)->get(['id', 'action', 'organization_id', 'created_at']);
-
-        return Inertia::render('admin/dashboard', [
+        return Inertia::render('admin/organizations', [
             'organizations' => $organizations,
-            'recentPayments' => $recentPayments,
-            'audit' => $audit,
-            'stats' => [
-                'enterprises' => Organization::query()->where('type', OrganizationType::Enterprise)->count(),
-                'stations' => Organization::query()->where('type', OrganizationType::Station)->count(),
-                'paidPayments' => Payment::query()->where('status', PaymentStatus::Paid)->count(),
-            ],
+            'enterprises' => $organizations->where('type', 'enterprise')->values(),
+            'stations' => $organizations->where('type', 'station')->values(),
+            'authorizations' => AuthorizedStation::query()->with(['enterprise:id,name', 'station:id,name'])->get()
+                ->map(fn (AuthorizedStation $a): array => [
+                    'id' => $a->id,
+                    'enterprise' => $a->enterprise->name,
+                    'station' => $a->station->name,
+                ]),
+        ]);
+    }
+
+    public function transactions(): Response
+    {
+        return Inertia::render('admin/transactions', [
+            'payments' => Payment::query()
+                ->with(['station:id,name', 'enterprise:id,name'])
+                ->orderByDesc('id')->limit(200)->get()->map($this->mapPayment(...)),
+        ]);
+    }
+
+    public function audit(): Response
+    {
+        return Inertia::render('admin/audit', [
+            'audit' => AuditLog::query()->with('actor:id,name')->orderByDesc('id')->limit(200)->get()
+                ->map(fn (AuditLog $a): array => [
+                    'id' => $a->id,
+                    'action' => $a->action,
+                    'actor' => $a->actor?->name,
+                    'organization_id' => $a->organization_id,
+                    'subject_type' => $a->subject_type,
+                    'subject_id' => $a->subject_id,
+                    'created_at' => $a->created_at->toDateTimeString(),
+                ]),
         ]);
     }
 
@@ -117,8 +154,10 @@ class AdminDashboardController extends Controller
         return [
             'id' => $p->id,
             'reference' => $p->reference,
+            'short_code' => $p->short_code,
             'amount' => $p->amount,
             'status' => $p->status->value,
+            'fuel_type' => $p->fuel_type->value,
             'station' => $p->station->name,
             'enterprise' => $p->enterprise->name,
             'created_at' => $p->created_at?->toDateTimeString(),

@@ -19,35 +19,40 @@ use Inertia\Response;
 
 class AdminOperationsController extends Controller
 {
-    public function index(): Response
+    public function refunds(): Response
     {
-        $refunds = RefundRequest::query()
-            ->with(['payment:id,reference,amount'])
-            ->orderByDesc('id')->limit(50)->get()
-            ->map(fn (RefundRequest $r): array => [
-                'id' => $r->id,
-                'status' => $r->status->value,
-                'reason' => $r->reason,
-                'payment_reference' => $r->payment->reference,
-                'amount' => $r->payment->amount,
-            ]);
-
-        $batches = SettlementBatch::query()
-            ->with(['station:id,name'])
-            ->orderByDesc('id')->limit(50)->get()
-            ->map(fn (SettlementBatch $b): array => [
-                'id' => $b->id,
-                'reference' => $b->reference,
-                'station' => $b->station->name,
-                'net_amount' => $b->net_amount,
-                'status' => $b->status->value,
-                'paid_at' => $b->paid_at?->toDateTimeString(),
-            ]);
-
-        return Inertia::render('admin/operations', [
-            'refunds' => $refunds,
-            'batches' => $batches,
+        return Inertia::render('admin/refunds', [
+            'refunds' => RefundRequest::query()
+                ->with(['payment:id,reference,amount,fuel_type', 'station:id,name'])
+                ->orderByDesc('id')->limit(100)->get()
+                ->map(fn (RefundRequest $r): array => [
+                    'id' => $r->id,
+                    'status' => $r->status->value,
+                    'reason' => $r->reason,
+                    'payment_reference' => $r->payment->reference,
+                    'amount' => $r->payment->amount,
+                    'station' => $r->station->name,
+                ]),
             'pendingRefunds' => RefundRequest::query()->where('status', RefundStatus::Pending)->count(),
+        ]);
+    }
+
+    public function settlements(): Response
+    {
+        return Inertia::render('admin/settlements', [
+            'batches' => SettlementBatch::query()
+                ->with(['station:id,name'])
+                ->orderByDesc('id')->limit(100)->get()
+                ->map(fn (SettlementBatch $b): array => [
+                    'id' => $b->id,
+                    'reference' => $b->reference,
+                    'station' => $b->station->name,
+                    'gross_sales' => $b->gross_sales,
+                    'refunds_deducted' => $b->refunds_deducted,
+                    'net_amount' => $b->net_amount,
+                    'status' => $b->status->value,
+                    'paid_at' => $b->paid_at?->toDateTimeString(),
+                ]),
         ]);
     }
 

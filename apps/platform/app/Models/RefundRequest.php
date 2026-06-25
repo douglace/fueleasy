@@ -48,4 +48,12 @@ class RefundRequest extends Model
     {
         return $this->belongsTo(Payment::class);
     }
+
+    /**
+     * @return BelongsTo<Organization, $this>
+     */
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'station_organization_id');
+    }
 }
