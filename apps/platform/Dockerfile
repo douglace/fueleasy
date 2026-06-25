@@ -1,6 +1,7 @@
-# Image unique PHP 8.3 + Node 20 : Wayfinder appelle `php artisan` pendant le build
+# Image unique PHP 8.4 + Node 20 : Wayfinder appelle `php artisan` pendant le build
 # Vite, donc PHP doit être présent au moment du build des assets.
-FROM php:8.3-cli-bookworm
+# PHP 8.4 requis : composer.lock épingle des paquets Symfony exigeant php >= 8.4.1.
+FROM php:8.4-cli-bookworm
 
 # Dépendances système + extensions PHP requises par Fusy
 # (PostgreSQL, dompdf -> gd/dom/mbstring, intl, bcmath, pcntl pour la concurrence).
