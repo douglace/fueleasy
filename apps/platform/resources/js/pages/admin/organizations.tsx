@@ -1,6 +1,21 @@
 import { useForm } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Card, Field, num, Page, Table } from '@/components/fusy';
+import {
+    Badge,
+    Btn,
+    Chip,
+    Field,
+    fcfa,
+    Input,
+    Note,
+    Page,
+    PageHead,
+    SearchMini,
+    Seg,
+    Select,
+    Table,
+} from '@/components/fusy';
 
 interface Organization {
     id: number;
@@ -25,7 +40,7 @@ interface Props {
     authorizations: Authorization[];
 }
 
-const input = 'rounded border border-border bg-background p-2';
+type OrgFilter = 'all' | 'enterprise' | 'station';
 
 export default function AdminOrganizations({
     organizations,
@@ -60,213 +75,380 @@ export default function AdminOrganizations({
             });
         };
 
+    const [filter, setFilter] = useState<OrgFilter>('all');
+    const [q, setQ] = useState('');
+
+    const rows = useMemo(() => {
+        const needle = q.trim().toLowerCase();
+
+        return organizations.filter((o) => {
+            if (filter !== 'all' && o.type !== filter) {
+                return false;
+            }
+
+            if (!needle) {
+                return true;
+            }
+
+            return `${o.name} ${o.code}`.toLowerCase().includes(needle);
+        });
+    }, [organizations, filter, q]);
+
     return (
         <Page title="Organisations">
-            <div className="grid gap-6 lg:grid-cols-3">
-                <Card title="Créer une organisation">
+            <PageHead
+                title="Organisations"
+                sub="Créer et administrer entreprises et stations, créditer les comptes carburant et gérer les autorisations."
+            />
+
+            <div className="stack">
+                <div className="cols-3 grid">
                     <form
+                        className="card"
                         onSubmit={submit(orgForm, '/admin/organizations')}
-                        className="grid gap-2"
                     >
-                        <select
-                            className={input}
-                            value={orgForm.data.type}
-                            onChange={(e) =>
-                                orgForm.setData('type', e.target.value)
-                            }
-                        >
-                            <option value="enterprise">Entreprise</option>
-                            <option value="station">Station</option>
-                        </select>
-                        <input
-                            className={input}
-                            placeholder="Nom de l'organisation"
-                            value={orgForm.data.name}
-                            onChange={(e) =>
-                                orgForm.setData('name', e.target.value)
-                            }
-                        />
-                        <input
-                            className={input}
-                            placeholder="Nom de l'admin"
-                            value={orgForm.data.admin_name}
-                            onChange={(e) =>
-                                orgForm.setData('admin_name', e.target.value)
-                            }
-                        />
-                        <input
-                            className={input}
-                            placeholder="Email admin"
-                            value={orgForm.data.admin_email}
-                            onChange={(e) =>
-                                orgForm.setData('admin_email', e.target.value)
-                            }
-                        />
-                        <input
-                            type="password"
-                            className={input}
-                            placeholder="Mot de passe admin"
-                            value={orgForm.data.admin_password}
-                            onChange={(e) =>
-                                orgForm.setData(
-                                    'admin_password',
-                                    e.target.value,
-                                )
-                            }
-                        />
-                        <label className="flex items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={orgForm.data.is_demo}
-                                onChange={(e) =>
-                                    orgForm.setData('is_demo', e.target.checked)
-                                }
-                            />{' '}
-                            Organisation démo
-                        </label>
-                        <button
-                            type="submit"
-                            disabled={orgForm.processing}
-                            className="rounded bg-primary px-3 py-2 text-primary-foreground"
-                        >
-                            Créer
-                        </button>
+                        <div className="card-h">
+                            <h3>Créer une organisation</h3>
+                        </div>
+                        <div className="card-p">
+                            <Field label="Type" required>
+                                <Select
+                                    value={orgForm.data.type}
+                                    onChange={(e) =>
+                                        orgForm.setData('type', e.target.value)
+                                    }
+                                >
+                                    <option value="enterprise">
+                                        Entreprise
+                                    </option>
+                                    <option value="station">Station</option>
+                                </Select>
+                            </Field>
+                            <Field
+                                label="Nom"
+                                required
+                                error={orgForm.errors.name}
+                            >
+                                <Input
+                                    placeholder="Ex. Sahel Distribution"
+                                    value={orgForm.data.name}
+                                    error={!!orgForm.errors.name}
+                                    onChange={(e) =>
+                                        orgForm.setData('name', e.target.value)
+                                    }
+                                />
+                            </Field>
+                            <div className="form-grid">
+                                <Field
+                                    label="Nom de l'admin"
+                                    error={orgForm.errors.admin_name}
+                                >
+                                    <Input
+                                        placeholder="Prénom Nom"
+                                        value={orgForm.data.admin_name}
+                                        error={!!orgForm.errors.admin_name}
+                                        onChange={(e) =>
+                                            orgForm.setData(
+                                                'admin_name',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+                                <Field
+                                    label="Email de l'admin"
+                                    error={orgForm.errors.admin_email}
+                                >
+                                    <Input
+                                        type="email"
+                                        placeholder="admin@org.cm"
+                                        value={orgForm.data.admin_email}
+                                        error={!!orgForm.errors.admin_email}
+                                        onChange={(e) =>
+                                            orgForm.setData(
+                                                'admin_email',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+                            </div>
+                            <Field
+                                label="Mot de passe temporaire"
+                                error={orgForm.errors.admin_password}
+                            >
+                                <Input
+                                    type="password"
+                                    value={orgForm.data.admin_password}
+                                    error={!!orgForm.errors.admin_password}
+                                    onChange={(e) =>
+                                        orgForm.setData(
+                                            'admin_password',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <label className="check mb-3">
+                                <input
+                                    type="checkbox"
+                                    checked={orgForm.data.is_demo}
+                                    onChange={(e) =>
+                                        orgForm.setData(
+                                            'is_demo',
+                                            e.target.checked,
+                                        )
+                                    }
+                                />
+                                Compte de démonstration
+                            </label>
+                            <Btn
+                                type="submit"
+                                className="w-full justify-center"
+                                loading={orgForm.processing}
+                                disabled={orgForm.processing}
+                            >
+                                Créer l'organisation
+                            </Btn>
+                        </div>
                     </form>
-                </Card>
 
-                <Card title="Créditer un compte carburant">
                     <form
+                        className="card"
                         onSubmit={submit(creditForm, '/admin/fuel-credits')}
-                        className="grid gap-2"
                     >
-                        <select
-                            className={input}
-                            value={creditForm.data.organization_id}
-                            onChange={(e) =>
-                                creditForm.setData(
-                                    'organization_id',
-                                    e.target.value,
-                                )
-                            }
-                        >
-                            <option value="">— Entreprise —</option>
-                            {enterprises.map((o) => (
-                                <option key={o.id} value={o.id}>
-                                    {o.name} ({o.code})
-                                </option>
-                            ))}
-                        </select>
-                        <input
-                            className={input}
-                            placeholder="Montant FCFA"
-                            value={creditForm.data.amount}
-                            onChange={(e) =>
-                                creditForm.setData('amount', e.target.value)
-                            }
-                        />
-                        <input
-                            className={input}
-                            placeholder="Description"
-                            value={creditForm.data.description}
-                            onChange={(e) =>
-                                creditForm.setData(
-                                    'description',
-                                    e.target.value,
-                                )
-                            }
-                        />
-                        <button
-                            type="submit"
-                            disabled={creditForm.processing}
-                            className="rounded bg-primary px-3 py-2 text-primary-foreground"
-                        >
-                            Créditer
-                        </button>
+                        <div className="card-h">
+                            <h3>Créditer un compte carburant</h3>
+                        </div>
+                        <div className="card-p">
+                            <Note className="mb-[14px]">
+                                Action financière sensible — crédite de l'argent
+                                réel.
+                            </Note>
+                            <Field
+                                label="Entreprise"
+                                required
+                                error={creditForm.errors.organization_id}
+                            >
+                                <Select
+                                    value={creditForm.data.organization_id}
+                                    onChange={(e) =>
+                                        creditForm.setData(
+                                            'organization_id',
+                                            e.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">— Entreprise —</option>
+                                    {enterprises.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                            {o.name} ({o.code})
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field
+                                label="Montant (FCFA)"
+                                required
+                                error={creditForm.errors.amount}
+                            >
+                                <Input
+                                    className="tnum"
+                                    inputMode="numeric"
+                                    placeholder="Ex. 1 000 000"
+                                    value={creditForm.data.amount}
+                                    error={!!creditForm.errors.amount}
+                                    onChange={(e) =>
+                                        creditForm.setData(
+                                            'amount',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Description"
+                                error={creditForm.errors.description}
+                            >
+                                <Input
+                                    placeholder="Réf. virement / motif"
+                                    value={creditForm.data.description}
+                                    onChange={(e) =>
+                                        creditForm.setData(
+                                            'description',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Btn
+                                type="submit"
+                                variant="green"
+                                className="w-full justify-center"
+                                loading={creditForm.processing}
+                                disabled={creditForm.processing}
+                            >
+                                Créditer le compte
+                            </Btn>
+                        </div>
                     </form>
-                </Card>
 
-                <Card title="Autoriser une station">
                     <form
+                        className="card"
                         onSubmit={submit(
                             authForm,
                             '/admin/authorized-stations',
                         )}
-                        className="grid gap-2"
                     >
-                        <Field label="Entreprise">
-                            <select
-                                className={input}
-                                value={authForm.data.enterprise_organization_id}
-                                onChange={(e) =>
-                                    authForm.setData(
-                                        'enterprise_organization_id',
-                                        e.target.value,
-                                    )
+                        <div className="card-h">
+                            <h3>Autoriser une station</h3>
+                        </div>
+                        <div className="card-p">
+                            <Field
+                                label="Entreprise"
+                                required
+                                error={
+                                    authForm.errors.enterprise_organization_id
                                 }
                             >
-                                <option value="">—</option>
-                                {enterprises.map((o) => (
-                                    <option key={o.id} value={o.id}>
-                                        {o.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </Field>
-                        <Field label="Station">
-                            <select
-                                className={input}
-                                value={authForm.data.station_organization_id}
-                                onChange={(e) =>
-                                    authForm.setData(
-                                        'station_organization_id',
-                                        e.target.value,
-                                    )
-                                }
+                                <Select
+                                    value={
+                                        authForm.data.enterprise_organization_id
+                                    }
+                                    onChange={(e) =>
+                                        authForm.setData(
+                                            'enterprise_organization_id',
+                                            e.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">—</option>
+                                    {enterprises.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                            {o.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field
+                                label="Station"
+                                required
+                                error={authForm.errors.station_organization_id}
                             >
-                                <option value="">—</option>
-                                {stations.map((o) => (
-                                    <option key={o.id} value={o.id}>
-                                        {o.name}
-                                    </option>
+                                <Select
+                                    value={
+                                        authForm.data.station_organization_id
+                                    }
+                                    onChange={(e) =>
+                                        authForm.setData(
+                                            'station_organization_id',
+                                            e.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">—</option>
+                                    {stations.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                            {o.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Btn
+                                type="submit"
+                                className="mb-[14px] w-full justify-center"
+                                loading={authForm.processing}
+                                disabled={authForm.processing}
+                            >
+                                Autoriser
+                            </Btn>
+                            <div className="sub mb-2 font-semibold">
+                                Autorisations existantes (
+                                {authorizations.length})
+                            </div>
+                            <div className="flex flex-col gap-[7px]">
+                                {authorizations.map((a) => (
+                                    <Chip key={a.id}>
+                                        {a.enterprise} →{' '}
+                                        <b className="text-[var(--fg)]">
+                                            {a.station}
+                                        </b>
+                                    </Chip>
                                 ))}
-                            </select>
-                        </Field>
-                        <button
-                            type="submit"
-                            disabled={authForm.processing}
-                            className="rounded bg-primary px-3 py-2 text-primary-foreground"
-                        >
-                            Autoriser
-                        </button>
-                        <ul className="mt-2 text-xs text-muted-foreground">
-                            {authorizations.map((a) => (
-                                <li key={a.id}>
-                                    {a.enterprise} → {a.station}
-                                </li>
-                            ))}
-                        </ul>
+                            </div>
+                        </div>
                     </form>
-                </Card>
-            </div>
+                </div>
 
-            <Card title="Toutes les organisations">
-                <Table head={['Code', 'Type', 'Nom', 'Statut', 'Solde']}>
-                    {organizations.map((o) => (
-                        <tr key={o.id} className="border-t border-border">
-                            <td className="p-2 font-mono">{o.code}</td>
-                            <td className="p-2">
-                                {o.type}
-                                {o.is_demo ? ' (démo)' : ''}
-                            </td>
-                            <td className="p-2">{o.name}</td>
-                            <td className="p-2">{o.status}</td>
-                            <td className="p-2">
-                                {o.balance === null ? '—' : num(o.balance)}
-                            </td>
-                        </tr>
-                    ))}
-                </Table>
-            </Card>
+                <section className="card">
+                    <div className="card-h">
+                        <h3>Toutes les organisations</h3>
+                        <span className="sub">
+                            <b>{rows.length}</b> / {organizations.length}
+                        </span>
+                        <div className="actions">
+                            <Seg
+                                value={filter}
+                                onChange={setFilter}
+                                options={[
+                                    { value: 'all', label: 'Toutes' },
+                                    {
+                                        value: 'enterprise',
+                                        label: 'Entreprises',
+                                    },
+                                    { value: 'station', label: 'Stations' },
+                                ]}
+                            />
+                            <SearchMini
+                                value={q}
+                                onChange={setQ}
+                                placeholder="Nom, code…"
+                            />
+                        </div>
+                    </div>
+                    <Table
+                        head={[
+                            'Code',
+                            'Type',
+                            'Nom',
+                            'Statut',
+                            { label: 'Solde carburant', num: true },
+                        ]}
+                        empty="Aucune organisation."
+                    >
+                        {rows.map((o) => (
+                            <tr key={o.id}>
+                                <td>
+                                    <span className="mono font-semibold">
+                                        {o.code}
+                                    </span>
+                                </td>
+                                <td>
+                                    <Chip>
+                                        {o.type === 'enterprise'
+                                            ? 'Entreprise'
+                                            : 'Station'}
+                                    </Chip>
+                                    {o.is_demo && (
+                                        <span className="tag-demo">Démo</span>
+                                    )}
+                                </td>
+                                <td className="strong">{o.name}</td>
+                                <td>
+                                    <Badge domain="org" value={o.status} />
+                                </td>
+                                <td className="num t-amount">
+                                    {o.balance === null ? (
+                                        <span className="sub">—</span>
+                                    ) : (
+                                        fcfa(o.balance)
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </Table>
+                </section>
+            </div>
         </Page>
     );
 }

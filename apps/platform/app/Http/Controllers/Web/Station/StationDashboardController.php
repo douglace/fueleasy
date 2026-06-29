@@ -17,6 +17,7 @@ use App\Models\Payment;
 use App\Models\Pump;
 use App\Models\SettlementBatch;
 use App\Models\User;
+use App\Support\DashboardCharts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -34,12 +35,18 @@ class StationDashboardController extends Controller
             ->where('station_organization_id', $org)->where('status', PaymentStatus::Paid)
             ->whereDate('confirmed_at', now()->toDateString())->sum('amount');
 
+        $paid = Payment::query()->where('station_organization_id', $org)->where('status', PaymentStatus::Paid);
+
         return Inertia::render('station/dashboard', [
             'stats' => [
                 'todaySales' => (int) $today,
                 'pendingAmount' => $settlements->pendingAmount($org),
                 'pumps' => Pump::query()->where('organization_id', $org)->count(),
                 'pompistes' => User::query()->where('organization_id', $org)->where('role', Role::Pompiste)->count(),
+            ],
+            'charts' => [
+                'volume' => DashboardCharts::volume($paid, 'confirmed_at'),
+                'fuelMix' => DashboardCharts::fuelMix($paid),
             ],
             'recentPayments' => Payment::query()
                 ->where('station_organization_id', $org)->where('status', PaymentStatus::Paid)

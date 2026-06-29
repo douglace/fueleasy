@@ -1,5 +1,25 @@
 # Lessons — apps/platform
 
+## 2026-06-25 — React Compiler interdit `useMemo` manuel et `setState` dans un effet
+
+**Symptôme** : `npm run lint` échoue (errors, pas warnings) sur du code React pourtant valide : `react-hooks/preserve-manual-memoization` ("Existing memoization could not be preserved") sur un `useMemo`, et `react-hooks/set-state-in-effect` ("Avoid calling setState() directly within an effect") sur un `setState` appelé dans le corps d'un `useEffect`.
+
+**Cause** : ce projet active le **React Compiler** (`babel-plugin-react-compiler` dans vite.config.ts) avec les règles ESLint associées en mode error. Le compilateur mémoïse automatiquement ; un `useMemo` manuel dont il ne peut pas prouver l'équivalence devient une erreur, et tout `setState` synchrone dans un effet est rejeté (cascade de rendus). Piège : du code React parfaitement standard ailleurs casse ici le lint.
+
+**Correction** : (1) supprimer les `useMemo` manuels de filtrage/dérivation — calculer la valeur directement dans le corps du composant, le compilateur s'en charge (`resources/js/pages/admin/settlements.tsx`). (2) Éviter `setState` dans un `useEffect` : pour des overlays animés, rendre conditionnellement sur la prop `open` et jouer l'animation d'entrée en CSS (`@keyframes`) plutôt qu'avec un flag d'état (`resources/js/components/overlays.tsx` + `.modal.show/.drawer.show` dans `resources/css/fusy-kit.css`).
+
+**Pour la prochaine fois** : lint qui casse sur `useMemo`/`setState`-in-effect alors que tsc passe ⇒ c'est le React Compiler, pas un vrai bug ; retirer la mémoïsation manuelle / sortir le setState de l'effet.
+
+## 2026-06-25 — Collision de noms de variables CSS lors du portage d'un kit dans shadcn/Tailwind v4
+
+**Symptôme** : en portant le CSS d'un design system externe (FUSY-DASH) dans l'app, certains éléments avaient des couleurs incohérentes (texte « muted » devenant une surface, ring de focus erroné) bien que les classes soient identiques à l'original.
+
+**Cause** : le kit externe et shadcn utilisent les **mêmes noms de variables** (`--muted`, `--ring`, `--card`, `--border`) avec une **sémantique différente** : côté Fusy `--muted` = couleur de texte gris, côté shadcn `--muted` = couleur de surface ; `--ring` = ombre rgba chez Fusy vs couleur pleine chez shadcn. Réutiliser tels quels fait que les classes du kit héritent des valeurs shadcn.
+
+**Correction** : dans le CSS du kit (`resources/css/fusy-kit.css`), référencer des tokens bruts **distincts** non collisionnés : `--card-surface`, `--line`, `--fg-muted`, `--ring-fusy`, `--sidebar-bg` (définis dans `resources/css/app.css`), au lieu de `--card`/`--border`/`--muted`/`--ring`/`--sidebar`.
+
+**Pour la prochaine fois** : couleurs « presque bonnes » après import d'un CSS tiers dans un projet shadcn ⇒ suspecter une collision de noms de custom properties avec les tokens shadcn ; renommer les tokens du kit.
+
 ## 2026-06-25 — `php artisan serve` écrase l'env du conteneur avec le .env
 
 **Symptôme** : en Docker, les migrations passaient (connexion à `db`) mais les pages web renvoyaient 500 avec `SQLSTATE[08006] connection to server at "127.0.0.1" port 5432 failed`. `config('database.connections.pgsql.host')` via `tinker` retournait pourtant `db`.

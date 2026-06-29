@@ -16,6 +16,7 @@ use App\Models\FuelAccount;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\RefundRequest;
+use App\Support\DashboardCharts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,6 +26,8 @@ class AdminDashboardController extends Controller
 {
     public function index(): Response
     {
+        $paid = Payment::query()->where('status', PaymentStatus::Paid);
+
         return Inertia::render('admin/dashboard', [
             'stats' => [
                 'enterprises' => Organization::query()->where('type', OrganizationType::Enterprise)->count(),
@@ -32,6 +35,10 @@ class AdminDashboardController extends Controller
                 'paidPayments' => Payment::query()->where('status', PaymentStatus::Paid)->count(),
                 'pendingRefunds' => RefundRequest::query()->where('status', 'pending')->count(),
                 'totalBalance' => (int) FuelAccount::query()->sum('balance'),
+            ],
+            'charts' => [
+                'volume' => DashboardCharts::volume($paid),
+                'fuelMix' => DashboardCharts::fuelMix($paid),
             ],
             'recentPayments' => Payment::query()
                 ->with(['station:id,name', 'enterprise:id,name'])

@@ -20,6 +20,7 @@ use App\Models\FuelAccount;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\DashboardCharts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,6 +33,7 @@ class EnterpriseDashboardController extends Controller
     public function index(Request $request): Response
     {
         $org = $this->organizationId($request);
+        $paid = Payment::query()->where('organization_id', $org)->where('status', PaymentStatus::Paid);
 
         return Inertia::render('enterprise/dashboard', [
             'balance' => (int) FuelAccount::query()->where('organization_id', $org)->value('balance'),
@@ -40,6 +42,10 @@ class EnterpriseDashboardController extends Controller
                 'authorizedStations' => AuthorizedStation::query()->where('enterprise_organization_id', $org)->count(),
                 'paidPayments' => Payment::query()->where('organization_id', $org)->where('status', PaymentStatus::Paid)->count(),
                 'spentTotal' => (int) Payment::query()->where('organization_id', $org)->where('status', PaymentStatus::Paid)->sum('amount'),
+            ],
+            'charts' => [
+                'volume' => DashboardCharts::volume($paid),
+                'fuelMix' => DashboardCharts::fuelMix($paid),
             ],
             'recentTransactions' => Payment::query()
                 ->where('organization_id', $org)->with('station:id,name')

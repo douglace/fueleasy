@@ -1,4 +1,4 @@
-import { Card, Page, Table } from '@/components/fusy';
+import { Badge, Note, Page, PageHead, Table } from '@/components/fusy';
 
 interface Station {
     id: number;
@@ -14,24 +14,44 @@ export default function EnterpriseStations({
 }) {
     return (
         <Page title="Stations autorisées">
-            <Card title={`${stations.length} station(s) autorisée(s)`}>
-                <p className="mb-3 text-sm text-muted-foreground">
-                    Les stations autorisées sont définies par Fusy. Vos
-                    chauffeurs ne peuvent payer que dans ces stations.
-                </p>
-                <Table
-                    head={['Code', 'Nom', 'Statut']}
-                    empty="Aucune station autorisée pour le moment."
-                >
-                    {stations.map((s) => (
-                        <tr key={s.id} className="border-t border-border">
-                            <td className="p-2 font-mono">{s.code}</td>
-                            <td className="p-2">{s.name}</td>
-                            <td className="p-2">{s.status}</td>
-                        </tr>
-                    ))}
-                </Table>
-            </Card>
+            <PageHead
+                title="Stations autorisées"
+                sub="Les stations où vos chauffeurs peuvent payer avec Fusy."
+            />
+
+            <div className="stack">
+                <Note icon="shield">
+                    Ces stations sont <b>définies par Fusy</b> à votre demande.
+                    Vos chauffeurs ne peuvent payer que dans cette liste — toute
+                    tentative ailleurs est refusée. Pour en ajouter, contactez
+                    votre référent Fusy.
+                </Note>
+
+                <section className="card">
+                    <div className="card-h">
+                        <h3>Réseau autorisé</h3>
+                        <span className="sub">
+                            <b>{stations.length}</b> station(s)
+                        </span>
+                    </div>
+                    <Table
+                        head={['Code', 'Nom', 'Statut']}
+                        empty="Aucune station autorisée pour le moment."
+                    >
+                        {stations.map((s) => (
+                            <tr key={s.id}>
+                                <td>
+                                    <span className="mono">{s.code}</span>
+                                </td>
+                                <td className="strong">{s.name}</td>
+                                <td>
+                                    <Badge domain="org" value={s.status} />
+                                </td>
+                            </tr>
+                        ))}
+                    </Table>
+                </section>
+            </div>
         </Page>
     );
 }

@@ -2,6 +2,8 @@
 
 @import 'tw-animate-css';
 
+@import './fusy-kit.css';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
@@ -9,9 +11,11 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-mono:
+        ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -59,77 +63,182 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* --- Charte Fusy exposée à Tailwind (bg-navy, text-green, etc.) --- */
+    --color-navy: var(--navy);
+    --color-navy-700: var(--navy-700);
+    --color-navy-900: var(--navy-900);
+    --color-green: var(--green);
+    --color-green-ink: var(--green-ink);
 }
 
+/* ============================================================================
+   Charte Fusy — navy/vert · Manrope
+   Light = thème de référence (brief OpenDesign). Dark = dérivé Fusy.
+   Les variables shadcn (--primary, --background…) sont mappées sur les tokens
+   Fusy pour que les composants shadcn (auth/settings) héritent de la charte.
+   ========================================================================== */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    /* ---- Tokens bruts Fusy ---- */
+    --navy: #003362;
+    --navy-700: #00477f;
+    --navy-900: #002848;
+    --green: #00b473;
+    --green-ink: #007a4f;
+    --bg: #f6f8fa;
+    --card-surface: #ffffff;
+    --card-2: #fbfcfd;
+    --fg: #172b3a;
+    --fg-2: #33444f;
+    --fg-muted: #5e6d78;
+    --faint: #8a98a2;
+    --line: #dce4ea;
+    --border-strong: #c7d3dc;
+    --navy-soft: #e8f2f9;
+    --green-soft: #e5f7ef;
+    --ring-fusy: rgba(0, 51, 98, 0.28);
+
+    /* sémantique : texte / fond */
+    --ok: #007a4f;
+    --ok-bg: #e5f7ef;
+    --info: #00598f;
+    --info-bg: #e8f2f9;
+    --warn: #915600;
+    --warn-bg: #fff3da;
+    --err: #a52e2e;
+    --err-bg: #fdecec;
+    --destr: #c53939;
+    --destr-bg: #fdecec;
+
+    /* surfaces de la coque */
+    --sidebar-bg: #002848;
+    --sidebar-fg: #c9d6e2;
+    --sidebar-active: #00b473;
+    --sidebar-active-bg: rgba(0, 180, 115, 0.14);
+    --sidebar-hover: rgba(255, 255, 255, 0.06);
+    --topbar: #ffffff;
+
+    --r-field: 8px;
+    --r-card: 12px;
+    --r-modal: 16px;
+    --r-pill: 9999px;
+    --sp: 4px;
+    --shadow-pop:
+        0 6px 24px rgba(15, 35, 55, 0.12), 0 1px 0 rgba(15, 35, 55, 0.04);
+    --shadow-card: 0 1px 2px rgba(15, 35, 55, 0.04);
+    --mono:
+        ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+    /* ---- Mapping shadcn → Fusy (light) ---- */
+    --background: var(--bg);
+    --foreground: var(--fg);
+    --card: var(--card-surface);
+    --card-foreground: var(--fg);
+    --popover: var(--card-surface);
+    --popover-foreground: var(--fg);
+    --primary: var(--navy);
+    --primary-foreground: #ffffff;
+    --secondary: var(--card-2);
+    --secondary-foreground: var(--fg);
+    --muted: var(--card-2);
+    --muted-foreground: var(--fg-muted);
+    --accent: var(--navy-soft);
+    --accent-foreground: var(--navy);
+    --destructive: var(--destr);
+    --destructive-foreground: #ffffff;
+    --border: var(--line);
+    --input: var(--border-strong);
+    --ring: var(--navy);
+    --chart-1: var(--navy);
+    --chart-2: var(--green);
+    --chart-3: #e0a93b;
+    --chart-4: var(--info);
+    --chart-5: var(--warn);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar: var(--sidebar-bg);
+    --sidebar-foreground: var(--sidebar-fg);
+    --sidebar-primary: var(--green);
+    --sidebar-primary-foreground: #04231a;
+    --sidebar-accent: var(--sidebar-active-bg);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: var(--sidebar-active);
+
+    color-scheme: light;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    /* ---- Tokens bruts Fusy (dark) ---- */
+    --navy: #2c7dbe;
+    --navy-700: #3e92d6;
+    --navy-900: #0b1722;
+    --green: #00c77f;
+    --green-ink: #3fd89c;
+    --bg: #0b1722;
+    --card-surface: #13212e;
+    --card-2: #16252f;
+    --fg: #e7eef4;
+    --fg-2: #c4d2dc;
+    --fg-muted: #90a2ae;
+    --faint: #6e8190;
+    --line: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --navy-soft: rgba(44, 125, 190, 0.16);
+    --green-soft: rgba(0, 199, 127, 0.14);
+    --ring-fusy: rgba(63, 216, 156, 0.4);
+
+    --ok: #3fd89c;
+    --ok-bg: rgba(0, 199, 127, 0.14);
+    --info: #7cc0f0;
+    --info-bg: rgba(44, 125, 190, 0.16);
+    --warn: #e7b45a;
+    --warn-bg: rgba(231, 180, 90, 0.14);
+    --err: #f08c8c;
+    --err-bg: rgba(197, 57, 57, 0.16);
+    --destr: #f08c8c;
+    --destr-bg: rgba(197, 57, 57, 0.16);
+
+    --sidebar-bg: #0a141d;
+    --sidebar-fg: #a9bbc8;
+    --topbar: #0f1d29;
+    --shadow-pop: 0 10px 34px rgba(0, 0, 0, 0.5);
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02);
+
+    /* ---- Mapping shadcn → Fusy (dark) ---- */
+    --background: var(--bg);
+    --foreground: var(--fg);
+    --card: var(--card-surface);
+    --card-foreground: var(--fg);
+    --popover: var(--card-surface);
+    --popover-foreground: var(--fg);
+    --primary: var(--navy);
+    --primary-foreground: #ffffff;
+    --secondary: var(--card-2);
+    --secondary-foreground: var(--fg);
+    --muted: var(--card-2);
+    --muted-foreground: var(--fg-muted);
+    --accent: var(--navy-soft);
+    --accent-foreground: var(--fg);
+    --destructive: var(--destr);
+    --destructive-foreground: #04231a;
+    --border: var(--line);
+    --input: var(--border-strong);
+    --ring: var(--green-ink);
+    --chart-1: var(--navy);
+    --chart-2: var(--green);
+    --chart-3: #e0a93b;
+    --chart-4: var(--info);
+    --chart-5: var(--warn);
+    --sidebar: var(--sidebar-bg);
+    --sidebar-foreground: var(--sidebar-fg);
+    --sidebar-primary: var(--green);
+    --sidebar-primary-foreground: #04231a;
+    --sidebar-accent: var(--sidebar-active-bg);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: var(--sidebar-active);
+
+    color-scheme: dark;
 }
 
 @layer base {
@@ -139,5 +248,7 @@
 
     body {
         @apply bg-background text-foreground;
+        font-feature-settings: 'ss01', 'cv11';
+        -webkit-font-smoothing: antialiased;
     }
 }
