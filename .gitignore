@@ -23,3 +23,7 @@ apps/mobile/.packages
 apps/mobile/build/
 apps/mobile/ios/Pods/
 apps/mobile/ios/.symlinks/
+
+# Artefacts de design handoff (mockups de reference)
+FUSY---DASH.zip
+FUSY-DASH/
