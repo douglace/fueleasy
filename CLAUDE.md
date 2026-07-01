@@ -69,7 +69,7 @@ Distinction structurante à préserver dans l'UI et le code : le **budget chauff
 
 ## État livré & à venir
 
-- **App mobile Flutter** (`apps/mobile/`) — **vit dans ce monorepo** au chemin `apps/mobile/` (décidé le 2026-07-01), **à créer**. Une seule app Flutter qui affiche l'interface chauffeur ou pompiste selon le rôle du compte. Tous les contrats API nécessaires sont opérationnels et testés sous `routes/api.php` (`v1/mobile`). À sa création, documenter ici les commandes Flutter.
+- **App mobile Flutter** (`apps/mobile/`) — **scaffoldée** (Flutter 3.41.6, Riverpod + Dio + go_router). Une seule app qui affiche l'interface chauffeur ou pompiste selon le `role` renvoyé par `GET /me`. Consomme l'API `v1/mobile`. Construction **par phases** (Phase 0 = fondations livrée : thème/tokens, composants, config, CI). Commandes et détails dans [`apps/mobile/README.md`](apps/mobile/README.md). **Le SDK Flutter n'est pas dans le PATH** sur cette machine : `export PATH="/Volumes/Work/flutterSdk/flutter/bin:$PATH"`. URL backend injectée via `--dart-define=API_BASE_URL=...` (émulateur Android : `http://10.0.2.2:8000`).
 - **Déploiement** — runbook manuel VPS documenté dans [`docs/RUNBOOK_DEPLOIEMENT.md`](apps/platform/docs/RUNBOOK_DEPLOIEMENT.md) (migrations, build, queue + scheduler, sauvegarde, rollback).
 - **Seeders pilote** — `database/seeders/DatabaseSeeder.php` seede un environnement pilote complet (Admin Fusy `admin@fusy.test`/`password`, entreprise créditée + chauffeurs/budgets, station + pompe + pompiste, autorisation, organisation démo). Idempotent. Lancer : `php artisan migrate:fresh --seed`.
 - **Checklist d'implémentation** : [`docs/IMPLEMENTATION_CHECKLIST.md`](apps/platform/docs/IMPLEMENTATION_CHECKLIST.md).
