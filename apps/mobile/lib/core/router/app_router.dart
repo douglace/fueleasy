@@ -9,7 +9,7 @@ import '../../features/auth/screens/device_change_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/unsupported_role_screen.dart';
-import '../../features/driver/screens/driver_home_screen.dart';
+import '../../features/driver/screens/driver_shell_screen.dart';
 
 const splashPath = '/splash';
 const loginPath = '/login';
@@ -77,7 +77,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: driverHomePath,
-        builder: (context, state) => const DriverHomeScreen(),
+        builder: (context, state) => const DriverShellScreen(),
       ),
       GoRoute(
         path: attendantHomePath,

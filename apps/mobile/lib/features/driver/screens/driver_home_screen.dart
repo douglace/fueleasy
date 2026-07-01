@@ -52,16 +52,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     final profile = auth.value;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Accueil'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Se déconnecter',
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Accueil')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.screenMargin),
