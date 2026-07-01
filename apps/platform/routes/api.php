@@ -35,6 +35,7 @@ Route::prefix('v1/mobile')->group(function (): void {
         Route::post('payments/{payment}/confirm', [PaymentController::class, 'confirm']);
 
         // Pompiste — sessions et alertes.
+        Route::get('station/pumps', [WorkSessionController::class, 'pumps']);
         Route::post('work-sessions', [WorkSessionController::class, 'open']);
         Route::post('work-sessions/{workSession}/close', [WorkSessionController::class, 'close']);
         Route::get('work-sessions/current/qr', [WorkSessionController::class, 'currentQr']);

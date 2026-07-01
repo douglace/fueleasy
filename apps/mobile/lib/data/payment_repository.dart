@@ -17,6 +17,11 @@ class PaymentRepository {
     (data) => ScanContext.fromJson(data as Map<String, dynamic>),
   );
 
+  // create/get/confirm renvoient une PaymentResource via ->response(), donc
+  // enveloppée par Laravel dans {"data": {...}} — contrairement aux autres
+  // endpoints qui embarquent la resource dans un tableau construit à la main
+  // (celui-là n'est pas enveloppé une seconde fois). Vérifié en direct contre
+  // le backend, pas seulement déduit du code source.
   Future<Payment> create({
     required String qr,
     required FuelType fuelType,
@@ -26,12 +31,16 @@ class PaymentRepository {
       'payments',
       data: {'qr': qr, 'fuel_type': fuelType.value, 'amount': amount},
     ),
-    (data) => Payment.fromJson(data as Map<String, dynamic>),
+    (data) => Payment.fromJson(
+      (data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    ),
   );
 
   Future<Payment> get(int paymentId) => runApi(
     () => _dio.get('payments/$paymentId'),
-    (data) => Payment.fromJson(data as Map<String, dynamic>),
+    (data) => Payment.fromJson(
+      (data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    ),
   );
 
   Future<Payment> confirm({
@@ -43,7 +52,9 @@ class PaymentRepository {
       'payments/$paymentId/confirm',
       data: {'pin': pin, 'idempotency_key': idempotencyKey},
     ),
-    (data) => Payment.fromJson(data as Map<String, dynamic>),
+    (data) => Payment.fromJson(
+      (data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    ),
   );
 
   /// Récupération après perte réseau pendant la confirmation.

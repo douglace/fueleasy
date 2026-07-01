@@ -34,20 +34,50 @@ void main() {
     'created_at': '2026-07-01T12:05:00Z',
   };
 
-  test('create returns a pending payment', () async {
+  // create/get/confirm sont enveloppés par Laravel dans {"data": {...}}
+  // (PaymentResource rendue via ->response()) — vérifié en direct contre le
+  // backend, contrairement aux endpoints qui embarquent la resource dans un
+  // tableau construit à la main (search, by-key, today).
+  test(
+    'create unwraps the {data:...} envelope into a pending payment',
+    () async {
+      adapter.onPost(
+        'payments',
+        (server) => server.reply(201, {'data': paymentJson('pending')}),
+        data: Matchers.any,
+      );
+      final p = await repo.create(
+        qr: 'QR',
+        fuelType: FuelType.gasoil,
+        amount: 50000,
+      );
+      expect(p.id, 789);
+      expect(p.status, PaymentStatus.pending);
+      expect(p.shortCode, 'K9M2P5');
+    },
+  );
+
+  test('get unwraps the {data:...} envelope', () async {
+    adapter.onGet(
+      'payments/789',
+      (server) => server.reply(200, {'data': paymentJson('paid')}),
+    );
+    final p = await repo.get(789);
+    expect(p.status, PaymentStatus.paid);
+  });
+
+  test('confirm unwraps the {data:...} envelope into a paid payment', () async {
     adapter.onPost(
-      'payments',
-      (server) => server.reply(201, paymentJson('pending')),
+      'payments/789/confirm',
+      (server) => server.reply(200, {'data': paymentJson('paid')}),
       data: Matchers.any,
     );
-    final p = await repo.create(
-      qr: 'QR',
-      fuelType: FuelType.gasoil,
-      amount: 50000,
+    final p = await repo.confirm(
+      paymentId: 789,
+      pin: '1234',
+      idempotencyKey: 'k',
     );
-    expect(p.id, 789);
-    expect(p.status, PaymentStatus.pending);
-    expect(p.shortCode, 'K9M2P5');
+    expect(p.status, PaymentStatus.paid);
   });
 
   test('confirm maps a 422 invalid_pin to DomainFailure', () async {

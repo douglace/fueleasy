@@ -9,6 +9,7 @@ use App\Application\Stations\CloseWorkSession;
 use App\Application\Stations\OpenWorkSession;
 use App\Domain\Identity\Role;
 use App\Domain\Payments\PaymentStatus;
+use App\Domain\Stations\PumpStatus;
 use App\Domain\Stations\WorkSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PaymentResource;
@@ -22,6 +23,28 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WorkSessionController extends Controller
 {
+    /**
+     * Pompes actives de la station du pompiste (pour choisir où ouvrir une session).
+     */
+    public function pumps(Request $request): JsonResponse
+    {
+        $pompiste = $this->assertPompiste($request);
+
+        $pumps = Pump::query()
+            ->where('organization_id', $pompiste->organization_id)
+            ->where('status', PumpStatus::Active)
+            ->orderBy('label')
+            ->get();
+
+        return response()->json([
+            'data' => $pumps->map(fn (Pump $pump): array => [
+                'id' => $pump->id,
+                'label' => $pump->label,
+                'available_fuels' => $pump->available_fuels ?? [],
+            ]),
+        ]);
+    }
+
     public function open(Request $request, OpenWorkSession $open): JsonResponse
     {
         $pompiste = $this->assertPompiste($request);
