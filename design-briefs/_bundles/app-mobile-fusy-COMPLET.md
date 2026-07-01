@@ -11,9 +11,10 @@ Fusy est **UNE seule application Flutter**. L'interface affichée dépend du **r
 compte connecté** :
 
 - **Chauffeur** — consulte son budget, scanne une station autorisée, crée une demande
-  carburant et la confirme par PIN. Cible : **Android + iOS**.
-- **Pompiste** — voit les demandes de sa station, les valide ou les refuse (sans jamais
-  modifier le montant). Cible : **Android**.
+  carburant et **la confirme directement par PIN** (débit immédiat). Cible : **Android + iOS**.
+- **Pompiste** — **consulte les paiements effectués** de sa station et en **accuse
+  réception** pour servir le carburant. Il ne valide, ne refuse ni ne modifie jamais une
+  transaction. Cible : **Android**.
 
 Ce n'est **pas** deux applications distinctes : c'est **un seul produit, une seule base
 de code, deux expériences** aiguillées après connexion selon le rôle. Le socle commun
@@ -38,7 +39,7 @@ de code, deux expériences** aiguillées après connexion selon le rôle. Le soc
 
 ## Résumé
 
-Fusy aide les entreprises camerounaises à remplacer les bons carburant papier et les avances cash par un compte carburant prépayé, des budgets attribués aux chauffeurs, une liste de stations autorisées et une double validation digitale à la pompe.
+Fusy aide les entreprises camerounaises à remplacer les bons carburant papier et les avances cash par un compte carburant prépayé, des budgets attribués aux chauffeurs, une liste de stations autorisées et une confirmation digitale par PIN à la pompe.
 
 Le MVP est B2B et fermé. Fusy crée les entreprises et les stations après accord commercial. Il ne s'agit pas d'un wallet grand public.
 
@@ -51,7 +52,7 @@ Fusy doit rendre chaque dépense :
 - autorisée avant exécution ;
 - limitée par le budget du chauffeur et le solde réel de l'entreprise ;
 - rattachée à une entreprise, un chauffeur, une station et un pompiste ;
-- confirmée par deux personnes ;
+- confirmée par le chauffeur avec son PIN ;
 - historisée avec un reçu.
 
 ## Acteurs et responsabilités
@@ -60,8 +61,8 @@ Fusy doit rendre chaque dépense :
 |---|---|
 | Admin Fusy | Crée les entreprises, stations et pompistes, crédite les comptes, autorise les stations et supervise les transactions. |
 | Admin entreprise | Crée les chauffeurs, attribue les budgets et consulte les dépenses. |
-| Chauffeur | Scanne la station, saisit le montant et confirme la transaction avec son PIN. |
-| Pompiste | Vérifie la demande puis la valide ou la refuse sans modifier son contenu. |
+| Chauffeur | Scanne la station, saisit le montant et confirme la transaction avec son PIN. Le débit est immédiat. |
+| Pompiste | Consulte les paiements effectués de sa station et en accuse réception. Il ne valide, ne refuse ni ne modifie jamais une transaction. |
 
 ## Modèle financier visible dans l'interface
 
@@ -102,28 +103,29 @@ sequenceDiagram
     F-->>C: Confirme la station autorisée
     C->>F: Saisit montant et carburant
     F->>F: Vérifie statuts, budget et solde
-    F-->>P: Crée une demande valable 5 minutes
-    P->>F: Valide la demande
-    F-->>C: Demande la confirmation PIN
+    F-->>C: Crée une demande valable 5 minutes et demande le PIN
     C->>F: Confirme avec son PIN
     F->>F: Débite atomiquement solde et budget
-    F-->>C: Génère le reçu
-    F-->>P: Confirme la transaction terminée
+    F-->>C: Génère le reçu avec code court
+    F-->>P: Notifie le paiement effectué
+    P->>F: Accuse réception
 ```
 
-Le pompiste ne modifie jamais le montant ou le type de carburant. S'il constate une erreur, il refuse et le chauffeur recommence.
+Le pompiste n'intervient jamais dans la confirmation : le paiement est déjà réglé par le PIN du chauffeur au moment où il apparaît dans l'app pompiste. Le pompiste consulte le paiement (montant, carburant, code) pour servir le carburant, puis en accuse réception. Il ne modifie, ne valide ni ne refuse rien.
 
 ## États de transaction
 
+États réels du paiement (source : `app/Domain/Payments/PaymentStatus.php`).
+
 | État métier | Libellé utilisateur | Sens |
 |---|---|---|
-| `pending_attendant_validation` | En attente du pompiste | Demande créée, aucune validation encore. |
-| `attendant_approved` | À confirmer | Le pompiste a validé, le chauffeur doit saisir son PIN. |
-| `completed` | Terminée | Double validation obtenue, débits effectués, reçu généré. |
-| `rejected` | Refusée | Le pompiste a refusé, aucun débit. |
-| `expired` | Expirée | Le délai de cinq minutes est dépassé, aucun débit. |
-| `cancelled` | Annulée | Demande arrêtée avant finalisation, aucun débit. |
-| `blocked` | Bloquée | Une vérification préalable a échoué, aucune transaction financière créée. |
+| `pending` | À confirmer | Demande créée, le chauffeur doit saisir son PIN dans les cinq minutes. |
+| `paid` | Payée | PIN confirmé, débits effectués, reçu généré. |
+| `expired` | Expirée | Les cinq minutes sont dépassées sans confirmation PIN, aucun débit. |
+| `failed` | Échouée | La confirmation a échoué (par exemple PIN bloqué), aucun débit. |
+| `refunded` | Remboursée | Paiement remboursé a posteriori depuis le back-office Fusy. |
+
+Un échec des **vérifications avant création** (voir ci-dessous) empêche la création : la transaction est **bloquée avant enregistrement**, aucun paiement n'existe alors dans ces états. Il n'existe **aucun état de validation ou de refus pompiste**.
 
 ## Vérifications avant création
 
@@ -139,7 +141,7 @@ Le pompiste ne modifie jamais le montant ou le type de carburant. S'il constate 
 
 ## Expiration
 
-La fenêtre totale est de cinq minutes après création. L'expiration peut survenir avant la validation du pompiste ou après cette validation, avant le PIN chauffeur. Aucun débit n'a lieu dans les deux cas.
+La fenêtre est de cinq minutes après création. L'expiration survient si le chauffeur ne confirme pas son PIN dans ce délai. Aucun débit n'a lieu.
 
 ## Reçu MVP
 
@@ -151,8 +153,8 @@ Le reçu contient entreprise, chauffeur, station, pompiste, montant, carburant, 
 - Expliquer clairement pourquoi une action est bloquée.
 - Distinguer autorisation de dépense et argent réellement disponible.
 - Montrer le délai sans créer de panique inutile.
-- Ne jamais présenter une validation pompiste comme une transaction déjà payée.
-- Donner une preuve exploitable après chaque transaction terminée.
+- Côté pompiste, distinguer clairement les paiements à accuser réception de ceux déjà accusés.
+- Donner une preuve exploitable après chaque transaction payée.
 
 ## Hors périmètre
 
@@ -254,7 +256,7 @@ Les cartes regroupent une seule idée. Préférer bordure et espace blanc aux om
 
 ### Statuts
 
-Badges textuels courts : `En attente`, `À confirmer`, `Terminée`, `Refusée`, `Expirée`, `Annulée`, `Bloquée`.
+Badges textuels courts alignés sur les états réels : `À confirmer` (pending), `Payée` (paid), `Expirée`, `Échouée`, `Remboursée`, plus `Bloquée` pour un échec de vérification avant création. Côté pompiste : `À accuser` / `Accusé`. Aucun badge de validation ou de refus pompiste.
 
 ### Iconographie
 
@@ -296,8 +298,8 @@ Exemples :
 
 - `Scanner une station` plutôt que `Démarrer le processus d'achat` ;
 - `Budget insuffisant` plutôt que `Transaction impossible` ;
-- `Aucun montant ne sera débité` après un refus ou une expiration ;
-- `Le pompiste a validé. Confirmez avec votre PIN.` plutôt que `Transaction validée`.
+- `Aucun montant ne sera débité` après un blocage ou une expiration ;
+- `Confirmez le paiement avec votre PIN.` plutôt que `Valider la transaction`.
 
 ## Terminologie stable
 
@@ -306,9 +308,9 @@ Exemples :
 | Compte carburant | Argent réellement disponible pour les dépenses de l'entreprise. |
 | Budget chauffeur | Autorisation de dépense attribuée à un chauffeur. |
 | Station autorisée | Station dans laquelle l'entreprise accepte les transactions. |
-| Demande carburant | Transaction en cours de validation. |
-| Code court | Code à quatre chiffres permettant au pompiste de retrouver et vérifier la demande. |
-| Reçu | Preuve finale d'une transaction terminée. |
+| Demande carburant | Transaction créée, en attente de la confirmation PIN du chauffeur. |
+| Code court | Code à quatre chiffres permettant au pompiste de retrouver le paiement effectué. |
+| Reçu | Preuve finale d'une transaction payée. |
 
 Ne pas utiliser `wallet`, `crédit` ou `paiement effectué` lorsque le sens métier est budget, compte ou demande en attente.
 
@@ -378,7 +380,7 @@ Utiliser des données camerounaises plausibles sans reprendre de données person
 - Le sujet de l'action est clair.
 - Le statut est compréhensible sans connaître les termes internes.
 - `FCFA` est visible avec chaque montant critique.
-- Le message précise l'absence de débit après refus, expiration ou blocage.
+- Le message précise l'absence de débit après blocage ou expiration.
 - Le bouton décrit l'action, pas une réponse vague comme `Oui`.
 - Les actions irréversibles nomment l'entité concernée.
 
@@ -515,8 +517,7 @@ Le chauffeur peut consulter uniquement son budget, ses transactions et ses reçu
 - Saisie du montant et du type de carburant.
 - Champ libre véhicule, plaque ou mission lorsqu'il est demandé.
 - Création d'une demande valable cinq minutes.
-- Attente de la décision du pompiste.
-- Confirmation finale avec PIN.
+- Confirmation du paiement avec PIN (débit immédiat).
 - Historique personnel et reçus.
 
 ## Hors périmètre
@@ -530,9 +531,8 @@ Accueil
 ├── Scanner une station
 │   ├── Station reconnue
 │   ├── Détails de la demande
-│   ├── Attente pompiste
-│   ├── Confirmation PIN
-│   └── Reçu
+│   ├── Confirmation PIN (récapitulatif + minuterie)
+│   └── Reçu (avec code court)
 ├── Historique
 │   └── Détail transaction / reçu
 └── Profil
@@ -563,8 +563,8 @@ Au retour, le chauffeur utilise `Téléphone → PIN`. Le code d'activation ne d
 ## Règles de retour
 
 - Avant création de la demande : retour possible sans conséquence.
-- Après création : demander confirmation avant annulation.
-- Après validation pompiste : retour ne doit pas perdre l'étape de confirmation PIN.
+- Après création : demander confirmation avant annulation, car la demande active court sur cinq minutes.
+- Pendant la saisie du PIN : le retour ne doit pas perdre la demande active ni son minuteur.
 - Une demande active doit être restaurée après fermeture ou reprise de l'app.
 
 
@@ -600,11 +600,11 @@ Après plusieurs erreurs, afficher une temporisation et une voie de support ou d
 4. L'app affiche la station et confirme `Station autorisée`.
 5. Jean saisit `15 000 FCFA`, choisit `Super` et renseigne éventuellement `LT-482-AA`.
 6. Un récapitulatif affiche station, montant, carburant et budget après opération.
-7. Jean crée la demande.
-8. L'écran indique `Présentez le code 6821 au pompiste` et `Expire dans 04:58`.
-9. Après validation du pompiste, l'écran devient `Le pompiste a validé`.
-10. Jean vérifie les détails et saisit son PIN.
-11. L'app bloque le double envoi, attend le résultat et affiche le reçu.
+7. Jean crée la demande : l'app affiche un récapitulatif non modifiable et demande le PIN.
+8. Un compteur `Expire dans 04:58` indique le délai pour confirmer.
+9. Jean saisit son PIN pour confirmer le paiement, débité immédiatement.
+10. L'app bloque le double envoi, attend le résultat et affiche le reçu avec le code `6821`.
+11. Jean présente le reçu (code 6821) au pompiste Armand, qui le sert puis accuse réception dans son app.
 
 ## 4. Station non autorisée
 
@@ -614,25 +614,21 @@ Après scan, l'app affiche le nom de la station, le blocage, l'absence de débit
 
 Le blocage intervient avant création. Le chauffeur voit la cause qu'il peut comprendre : son budget disponible ou l'indisponibilité du compte entreprise. Le solde exact de l'entreprise reste masqué.
 
-## 6. Refus du pompiste
+## 6. Expiration avant confirmation
 
-L'attente bascule vers `Demande refusée`. Le message précise qu'aucun montant n'a été débité. Actions : `Modifier la demande` ou `Retour à l'accueil`.
+La minuterie atteint zéro avant que Jean n'ait confirmé son PIN. L'app affiche `Demande expirée`, l'absence de débit et un bouton `Créer une nouvelle demande`. Elle ne tente pas de prolonger silencieusement la demande.
 
-## 7. Expiration
+## 7. PIN incorrect
 
-La minuterie atteint zéro avant une des validations. L'app affiche `Demande expirée`, absence de débit et bouton `Créer une nouvelle demande`. Elle ne tente pas de prolonger silencieusement la demande.
+Le récapitulatif reste visible, le champ PIN est vidé et l'erreur est annoncée. La minuterie continue. Après expiration, la confirmation devient impossible et aucun montant n'est débité.
 
-## 8. PIN incorrect après validation
-
-Le détail reste visible, le champ PIN est vidé et l'erreur est annoncée. La minuterie continue. Après expiration, la confirmation devient impossible.
-
-## 9. Reprise après perte réseau
+## 8. Reprise après perte réseau
 
 L'app conserve l'identifiant de la demande, affiche un bandeau hors ligne et resynchronise son statut. Elle ne crée jamais une deuxième demande automatiquement.
 
-## 10. Historique et reçu
+## 9. Historique et reçu
 
-Jean filtre mentalement par date grâce à une liste récente claire. Il ouvre une transaction, voit son statut, les acteurs, le montant et le code. Seules les transactions terminées disposent d'un reçu final.
+Jean parcourt une liste récente claire. Il ouvre une transaction, voit son statut, les acteurs, le montant et le code. Seules les transactions payées disposent d'un reçu final.
 
 
 <!-- ==== SOURCE: 01-driver-app/04-screen-specifications.md ==== -->
@@ -685,31 +681,27 @@ Station verrouillée, champ montant numérique avec suffixe FCFA, choix `Super` 
 
 ## 10. Récapitulatif
 
-Répéter station, montant, carburant, information libre et budget estimé après opération. Action `Envoyer au pompiste`, secondaire `Modifier`. Préciser que le débit n'a pas encore lieu.
+Répéter station, montant, carburant, information libre et budget estimé après opération. Action `Confirmer avec le PIN`, secondaire `Modifier`. Préciser que le débit intervient à la confirmation du PIN.
 
-## 11. Attente pompiste
+## 11. Confirmation PIN
 
-Code court `6821` dominant, minuterie, montant, carburant, station, texte `Présentez ce code au pompiste`. Statut actualisé automatiquement. Action discrète `Annuler la demande` avec confirmation.
+Récapitulatif non modifiable (station, montant, carburant), minuterie restante `Expire dans 04:32`, saisie PIN à quatre chiffres et action `Confirmer 15 000 FCFA` (le nom du bouton inclut le montant). Anti double-envoi pendant la confirmation. Il n'existe aucun écran d'attente pompiste : la confirmation débite immédiatement.
 
-## 12. Refus ou expiration
+## 12. Expiration
 
-Page de résultat avec libellé explicite, cause lorsqu'elle est disponible, `Aucun montant n'a été débité`, et action adaptée : modifier, recommencer ou accueil.
+Page de résultat `Demande expirée`, cause lorsqu'elle est disponible, `Aucun montant n'a été débité`, et action adaptée : recommencer ou accueil.
 
-## 13. Confirmation PIN
+## 13. Succès et reçu
 
-Titre `Le pompiste a validé`, récapitulatif non modifiable, minuterie restante, PIN à quatre chiffres et action `Confirmer 15 000 FCFA`. Le nom du bouton inclut le montant.
+État `Transaction payée`, montant, station, date/heure, carburant, ID, code court à présenter au pompiste, nom du pompiste et nouveau budget. Actions : `Voir le reçu` et `Retour à l'accueil`.
 
-## 14. Succès et reçu
-
-État `Transaction terminée`, montant, station, date/heure, carburant, ID, code, pompiste et nouveau budget. Actions : `Voir le reçu` et `Retour à l'accueil`.
-
-## 15. Historique
+## 14. Historique
 
 Liste groupée par date avec station, montant, carburant et statut. Les montants sont alignés. États : chargement, vide, erreur, pagination ou chargement progressif simple.
 
-## 16. Détail transaction
+## 15. Détail transaction
 
-Chronologie courte du statut, toutes les données du reçu, identifiant copiable et action de partage/téléchargement seulement si prévue par l'implémentation du reçu. Pour une transaction non terminée, afficher `Ce document n'est pas un reçu final`.
+Chronologie courte du statut, toutes les données du reçu, identifiant copiable et action de partage/téléchargement seulement si prévue par l'implémentation du reçu. Pour une transaction non payée, afficher `Ce document n'est pas un reçu final`.
 
 ## Écrans de blocage transversaux
 
@@ -752,7 +744,7 @@ Quatre positions, saisie masquée, erreur annoncée, clavier numérique et prote
 
 ### Code court et minuterie
 
-Code très lisible, chiffres tabulaires, libellé `Code à donner au pompiste`. Minuterie textuelle `Expire dans 04:32`, puis avertissement sans clignotement agressif sous une minute.
+Code très lisible, chiffres tabulaires, libellé `Code à présenter au pompiste`, affiché sur le reçu après paiement. La minuterie textuelle `Expire dans 04:32` accompagne l'écran de confirmation PIN, avec un avertissement sans clignotement agressif sous une minute.
 
 ### Carte Transaction
 
@@ -782,14 +774,13 @@ Station, date, carburant, montant, badge textuel. Toute la carte peut ouvrir le 
 - Station non autorisée : `Votre entreprise n'autorise pas les achats dans cette station.`
 - Budget insuffisant : `Votre budget disponible est de {budget}. Saisissez un montant inférieur ou contactez votre responsable.`
 - Solde entreprise : `Le compte carburant de votre entreprise est temporairement insuffisant. Contactez votre responsable.`
-- Refus : `Le pompiste a refusé cette demande. Aucun montant n'a été débité.`
-- Expiration : `La demande a expiré après 5 minutes. Aucun montant n'a été débité.`
+- Expiration : `La demande a expiré après 5 minutes sans confirmation. Aucun montant n'a été débité.`
 - PIN incorrect : `PIN incorrect. Vérifiez puis réessayez avant l'expiration.`
 - Réseau : `Connexion instable. Nous vérifions le statut de votre demande.`
 
 ## État vide
 
-Historique vide : `Aucune transaction pour le moment` puis `Votre premier reçu apparaîtra ici après une transaction terminée.` L'action peut retourner à l'accueil, pas lancer automatiquement la caméra.
+Historique vide : `Aucune transaction pour le moment` puis `Votre premier reçu apparaîtra ici après une transaction payée.` L'action peut retourner à l'accueil, pas lancer automatiquement la caméra.
 
 
 <!-- ==== SOURCE: 01-driver-app/06-content-and-sample-data.md ==== -->
@@ -823,27 +814,25 @@ Historique vide : `Aucune transaction pour le moment` puis `Votre premier reçu 
 - Code court : `6821`
 - ID : `TX-8F21K9`
 - Créée : `19 juin 2026 à 14:27`
-- Terminée : `19 juin 2026 à 14:32`
+- Payée : `19 juin 2026 à 14:28`
 
 ## Historique
 
 | Date | Station | Carburant | Montant | Statut |
 |---|---|---|---:|---|
-| 19 juin, 14:32 | Tradex Bonamoussadi | Super | 15 000 FCFA | Terminée |
-| 17 juin, 09:14 | Neptune Logpom | Gasoil | 20 000 FCFA | Terminée |
-| 14 juin, 18:03 | Tradex Akwa | Super | 10 000 FCFA | Refusée |
+| 19 juin, 14:28 | Tradex Bonamoussadi | Super | 15 000 FCFA | Payée |
+| 17 juin, 09:14 | Neptune Logpom | Gasoil | 20 000 FCFA | Payée |
+| 14 juin, 18:03 | Tradex Akwa | Super | 10 000 FCFA | Payée |
 | 12 juin, 11:40 | MRS Deido | Gasoil | 18 000 FCFA | Expirée |
 
 ## Libellés d'actions
 
-`Continuer`, `Scanner une station`, `Autoriser la caméra`, `Saisir les détails`, `Envoyer au pompiste`, `Annuler la demande`, `Confirmer 15 000 FCFA`, `Créer une nouvelle demande`, `Voir le reçu`, `Retour à l'accueil`.
+`Continuer`, `Scanner une station`, `Autoriser la caméra`, `Saisir les détails`, `Confirmer avec le PIN`, `Annuler la demande`, `Confirmer 15 000 FCFA`, `Créer une nouvelle demande`, `Voir le reçu`, `Retour à l'accueil`.
 
 ## Notifications in-app
 
-- `Demande envoyée au pompiste.`
-- `Le pompiste a validé. Confirmez avec votre PIN.`
-- `Transaction terminée. Votre reçu est disponible.`
-- `Demande refusée. Aucun montant n'a été débité.`
+- `Paiement confirmé. Présentez le code 6821 au pompiste.`
+- `Transaction payée. Votre reçu est disponible.`
 - `Demande expirée. Aucun montant n'a été débité.`
 
 
@@ -911,33 +900,32 @@ Historique vide : `Aucune transaction pour le moment` puis `Votre premier reçu 
 
 ## Utilisateur
 
-Armand est pompiste à Tradex Bonamoussadi. Son compte a été créé par Admin Fusy et rattaché à cette station. Il doit traiter une demande en quelques secondes sans ralentir le service.
+Armand est pompiste à Tradex Bonamoussadi. Son compte a été créé par Admin Fusy et rattaché à cette station. Il doit repérer un paiement effectué en quelques secondes et servir le carburant sans ralentir le service.
 
 ## Objectifs
 
-- Voir immédiatement les demandes de sa station.
-- Retrouver une demande par son code court.
-- Comparer code, chauffeur, entreprise, montant et carburant.
-- Valider ou refuser sans ambiguïté.
-- Savoir que la transaction attend encore le PIN chauffeur.
-- Vérifier l'activité du jour.
+- Ouvrir sa session de travail sur une pompe en début de service.
+- Voir immédiatement les paiements effectués du jour dans sa station.
+- Être averti d'un nouveau paiement et en accuser réception.
+- Retrouver un paiement par son code court.
+- Lire code, chauffeur, entreprise, montant et carburant pour servir le bon volume.
+- Consulter l'activité du jour.
 
 ## Contraintes terrain
 
 - Forte luminosité, bruit et mains parfois occupées.
 - Téléphone Android d'entrée de gamme partagé ou dédié.
 - Réseau mobile instable.
-- Demandes limitées à cinq minutes.
-- Risque de sélectionner la mauvaise demande.
-- Le pompiste ne doit jamais modifier montant ou carburant.
+- Risque de confondre deux paiements.
+- Le pompiste ne valide, ne refuse ni ne modifie jamais un paiement : il est déjà réglé par le PIN du chauffeur.
 
 ## Permissions
 
-Armand voit uniquement les demandes et transactions de sa station. Il ne voit pas les soldes entreprises, budgets chauffeurs, autres stations, reversements globaux ou fonctions Admin Fusy.
+Armand voit uniquement les paiements et transactions de sa station. Il ne voit pas les soldes entreprises, budgets chauffeurs, autres stations, reversements globaux ou fonctions Admin Fusy.
 
 ## Priorités de design
 
-Lisibilité à distance, code court dominant, minuterie claire, actions valider/refuser séparées, confirmation de la station et statut `En attente du chauffeur` après validation.
+Lisibilité à distance, code court et montant dominants, distinction nette entre paiement `À accuser` et paiement `Accusé`, station et session de travail toujours visibles. Ne jamais présenter d'action de validation ou de refus.
 
 
 <!-- ==== SOURCE: 02-attendant-app/02-scope-and-information-architecture.md ==== -->
@@ -947,77 +935,75 @@ Lisibilité à distance, code court dominant, minuterie claire, actions valider/
 ## Fonctions MVP
 
 - Connexion téléphone et PIN.
-- Affichage de la station rattachée.
-- Liste des demandes en attente.
-- Recherche par code court.
+- Ouverture et fermeture d'une session de travail sur une pompe.
+- Affichage de la station rattachée et du QR de la pompe en service.
+- Liste des paiements effectués du jour pour la station.
+- Accusé de réception d'un nouveau paiement.
+- Recherche d'un paiement par code court.
 - Détail en lecture seule.
-- Validation ou refus.
-- Suivi de la confirmation chauffeur.
 - Historique du jour et total indicatif.
 - État réseau simple.
 
 ## Hors périmètre
 
-Création de compte, changement de station, modification montant/carburant, encaissement, stock carburant, prix à la pompe, reversement, reporting multi-stations, QR scanner, géolocalisation et gestion d'entreprise.
+Validation ou refus d'une transaction, modification montant/carburant, création de compte, changement de station, encaissement, stock carburant, prix à la pompe, reversement, reporting multi-stations, scan QR, géolocalisation et gestion d'entreprise.
 
 ## Navigation
 
-Navigation inférieure recommandée : `En attente`, `Historique`, `Profil`.
+Navigation inférieure recommandée : `Paiements`, `Historique`, `Profil`.
 
 ```text
 Connexion
-└── En attente
-    ├── Recherche code
-    └── Détail demande
-        ├── Valider → Attente chauffeur → Terminée/Expirée
-        └── Refuser → Confirmation → Refusée
+└── Session de travail (choisir la pompe → QR de la pompe)
+    └── Paiements du jour
+        ├── Recherche code
+        └── Détail paiement (lecture seule)
+            └── Accuser réception → Accusé
 Historique
 └── Détail transaction
 Profil
-└── Station, identité, déconnexion
+└── Station, session en cours, identité, fermer la session, déconnexion
 ```
 
-L'écran `En attente` est toujours la destination après connexion. Une demande active doit se mettre à jour sans rechargement manuel lorsque possible.
+L'écran `Paiements du jour` est la destination après ouverture de la session. La liste se met à jour sans rechargement manuel lorsque possible, et un nouveau paiement y apparaît en tête, marqué `À accuser`.
 
 
 <!-- ==== SOURCE: 02-attendant-app/03-user-flows.md ==== -->
 
 # Parcours utilisateur — Pompiste
 
-## Connexion
+## Connexion et ouverture de session
 
-Armand saisit son téléphone et son PIN. Après succès, l'app affiche clairement `Tradex Bonamoussadi`. Un compte suspendu ou non rattaché bloque l'accès avec une instruction de contacter le gérant ou Fusy.
+Armand saisit son téléphone et son PIN. Après succès, l'app affiche clairement `Tradex Bonamoussadi`. Il ouvre une session de travail sur une pompe (par exemple `Pompe 1`) ; l'app affiche le QR de la pompe et l'état réseau. Un compte suspendu ou non rattaché bloque l'accès avec une instruction de contacter le gérant ou Fusy.
 
-## Validation nominale
+## Consultation et accusé de réception (nominal)
 
-1. La demande `6821` apparaît en haut avec `Expire dans 04:12`.
-2. Armand ouvre la demande et compare Jean Mballa, TransLog Cameroun SARL, Super et 15 000 FCFA.
-3. Il touche `Valider la demande`.
-4. Une confirmation répète code, montant et carburant.
-5. Après validation, l'écran indique `En attente du PIN chauffeur`.
-6. Quand Jean confirme, l'état devient `Transaction terminée`.
+1. Le paiement `6821` apparaît en tête des paiements du jour, marqué `À accuser`, avec Jean Mballa, TransLog Cameroun SARL, Super et `15 000 FCFA`.
+2. Armand ouvre le paiement et lit le montant et le carburant à servir.
+3. Il touche `Accuser réception`.
+4. Le paiement passe au statut `Accusé` ; Armand sert le carburant correspondant.
 
-La validation pompiste n'est jamais présentée comme un paiement final.
+Le paiement est déjà réglé au moment où il apparaît : il n'y a ni validation ni refus. L'accusé de réception ne débite ni n'annule rien ; il confirme seulement que le pompiste a vu la transaction.
 
 ## Recherche par code
 
-Armand saisit quatre chiffres. Un résultat exact s'ouvre. Aucun résultat : message `Aucune demande active avec ce code dans cette station` et possibilité de corriger.
+Armand saisit quatre chiffres. Le paiement correspondant s'ouvre. Aucun résultat : message `Aucun paiement avec ce code aujourd'hui dans cette station` et possibilité de corriger.
 
-## Refus
+## Nouveau paiement pendant le service
 
-Armand touche `Refuser`, voit l'impact `La demande sera annulée sans débit`, confirme éventuellement un motif simple puis obtient `Demande refusée`.
-
-## Expiration
-
-Une demande expirée disparaît de la file active ou reste brièvement marquée `Expirée`. Sur le détail, les actions sont désactivées et aucun débit n'est annoncé.
+Un nouveau paiement effectué apparaît automatiquement en tête de liste, marqué `À accuser`, avec un rappel visuel discret. Si le pompiste ne l'accuse pas rapidement, Fusy envoie un SMS de secours ; l'accusé dans l'app lève ce rappel.
 
 ## Réseau instable
 
-Une action envoyée affiche `Vérification du statut`. L'app empêche un second envoi et synchronise avant d'annoncer réussite ou échec.
+Un accusé envoyé affiche `Vérification du statut`. L'app empêche un second envoi et synchronise avant d'annoncer réussite ou échec.
 
 ## Mauvaise station
 
-Les demandes d'une autre station ne sont jamais visibles. Un lien profond ou identifiant externe affiche une erreur d'autorisation sans révéler les détails.
+Les paiements d'une autre station ne sont jamais visibles. Un lien profond ou identifiant externe affiche une erreur d'autorisation sans révéler les détails.
+
+## Fin de service
+
+Armand ferme sa session de travail depuis le profil. La pompe n'est plus rattachée à sa session.
 
 
 <!-- ==== SOURCE: 02-attendant-app/04-screen-specifications.md ==== -->
@@ -1028,45 +1014,41 @@ Les demandes d'une autre station ne sont jamais visibles. Un lien profond ou ide
 
 Logo, téléphone, PIN, bouton `Se connecter`, aide courte. États : erreur PIN, compte suspendu, non rattaché, hors ligne.
 
-## 2. Accueil / station
+## 2. Ouverture de session
 
-En-tête avec station, état réseau et nombre de demandes. Action de recherche par code, liste triée par expiration la plus proche.
+Après connexion, choisir la pompe pour ouvrir une session de travail. Afficher la station rattachée. Bouton `Ouvrir la session`. Si une session est déjà ouverte, proposer de la reprendre.
 
-## 3. Demandes en attente
+## 3. Session en cours / QR pompe
 
-Chaque ligne affiche code dominant, temps restant, montant, carburant, chauffeur et entreprise. État vide : `Aucune demande en attente dans cette station`.
+En-tête station + pompe, état réseau, QR de la pompe affiché en grand pour le scan par les chauffeurs, accès rapide aux paiements du jour et à la recherche par code, action `Fermer la session`.
 
-## 4. Recherche par code court
+## 4. Paiements du jour
+
+Liste des paiements effectués de la station, le plus récent en tête. Chaque ligne affiche code court dominant, montant, carburant, chauffeur, entreprise, heure et un badge `À accuser` ou `Accusé`. État vide : `Aucun paiement aujourd'hui dans cette station`.
+
+## 5. Recherche par code court
 
 Clavier numérique, quatre positions, résultat exact. Autoriser correction rapide et soumission automatique après quatre chiffres sans empêcher le bouton explicite.
 
-## 5. Détail demande
+## 6. Détail paiement
 
-Code, minuterie, montant, carburant, chauffeur, entreprise et station. Toutes les valeurs sont en lecture seule. Bouton principal `Valider la demande`, bouton destructif secondaire `Refuser` visuellement séparé.
+Code, montant, carburant, chauffeur, entreprise, station, heure et identifiant. Toutes les valeurs sont en **lecture seule**. Si le paiement n'est pas encore accusé, bouton principal `Accuser réception`. Aucune action de validation, de refus ou de modification.
 
-## 6. Confirmation validation
+## 7. Confirmation d'accusé
 
-Modal ou feuille récapitulant code, montant, carburant et chauffeur. Actions `Confirmer la validation` et `Retour`. Aucun PIN pompiste demandé au MVP.
+Retour léger (feuille ou bandeau) : `Réception accusée`. Le paiement passe au badge `Accusé`. Aucun débit, aucune annulation ne découle de cette action.
 
-## 7. Confirmation refus
+## 8. Historique du jour
 
-Explique l'absence de débit. Motif optionnel seulement s'il est prévu côté produit ; sinon confirmation simple. Action `Refuser la demande`.
+Résumé : nombre de paiements et montant total du jour. Liste avec filtre simple (tous / à accuser / accusés). Ne pas présenter le total comme un solde à retirer.
 
-## 8. Résultat
+## 9. Détail transaction
 
-Variantes : `En attente du chauffeur`, `Transaction terminée`, `Demande refusée`, `Demande expirée`. Chaque variante indique la prochaine action.
+Statut, chauffeur, entreprise, montant, carburant, date/heure, code, ID et rôle du pompiste. Le reçu final appartient au paiement payé.
 
-## 9. Attente chauffeur
+## 10. Profil
 
-Montant et code visibles, texte `Demandez au chauffeur de confirmer dans son app`, minuterie restante, mise à jour automatique.
-
-## 10. Historique du jour
-
-Résumé : transactions terminées et montant total. Liste avec filtres simples de statut. Ne pas présenter le total comme un solde à retirer.
-
-## 11. Détail transaction
-
-Statut, chauffeur, entreprise, montant, carburant, date/heure, code, ID et preuve du rôle du pompiste. Une transaction non terminée n'est pas un reçu final.
+Identité du pompiste, station, session de travail en cours, action `Fermer la session` et `Déconnexion`.
 
 
 <!-- ==== SOURCE: 02-attendant-app/05-components-states-and-errors.md ==== -->
@@ -1075,36 +1057,33 @@ Statut, chauffeur, entreprise, montant, carburant, date/heure, code, ID et preuv
 
 ## Composants spécifiques
 
-- Carte de demande : code, minuterie, montant, chauffeur, carburant.
-- File priorisée : expiration proche en premier, sans animation agressive.
+- Carte de paiement : code court dominant, montant, chauffeur, carburant, heure, badge `À accuser` / `Accusé`.
+- Liste chronologique : le plus récent en tête, sans animation agressive.
 - Recherche code court : quatre chiffres, clavier numérique.
 - Détail en lecture seule : aucune apparence de champ éditable.
-- Actions séparées : validation bleue, refus rouge moins dominant mais explicite.
+- Bouton unique `Accuser réception` (aucun bouton de validation ou de refus).
+- Carte session de travail : station, pompe, QR, action `Fermer la session`.
 - Bandeau réseau : connecté, instable, hors ligne, synchronisation.
 
 ## États critiques
 
 - liste en chargement ;
 - liste vide ;
-- nouvelle demande reçue ;
-- demande déjà traitée sur un autre appareil ;
-- demande expirée pendant la lecture ;
-- validation envoyée mais statut inconnu ;
-- attente chauffeur ;
-- chauffeur confirme ;
-- chauffeur ne confirme pas avant expiration ;
+- nouveau paiement reçu (à accuser) ;
+- paiement déjà accusé sur un autre appareil ;
+- accusé envoyé mais statut inconnu (réseau) ;
+- aucune session de travail ouverte ;
 - session ou compte suspendu.
 
 ## Messages
 
-- `Aucune demande active avec le code 6821 dans cette station.`
-- `Cette demande vient d'expirer. Elle ne peut plus être validée.`
-- `Validation enregistrée. Le chauffeur doit maintenant confirmer avec son PIN.`
-- `Demande refusée. Aucun montant n'a été débité.`
-- `Connexion instable. Nous vérifions si votre validation a été enregistrée.`
-- `Cette demande a déjà été traitée. Actualisez la liste.`
+- `Aucun paiement avec le code 6821 aujourd'hui dans cette station.`
+- `Réception accusée.`
+- `Ce paiement a déjà été accusé. Actualisez la liste.`
+- `Connexion instable. Nous vérifions si votre accusé a été enregistré.`
+- `Ouvrez une session de travail sur une pompe pour commencer.`
 
-Le bouton ne doit jamais devenir `Servir le carburant` : l'app valide une demande, elle ne gère pas physiquement le service.
+Le bouton ne doit jamais devenir `Servir le carburant` ni `Valider` : l'app sert à consulter les paiements effectués et à en accuser réception, pas à autoriser ni à gérer physiquement le service.
 
 
 <!-- ==== SOURCE: 02-attendant-app/06-content-and-sample-data.md ==== -->
@@ -1116,26 +1095,27 @@ Le bouton ne doit jamais devenir `Servir le carburant` : l'app valide une demand
 - Pompiste : `Armand Etoa`
 - Téléphone : `+237 6•• •• 12 43`
 - Station : `Tradex Bonamoussadi`
+- Pompe en service : `Pompe 1`
 - État réseau : `Connexion stable`
 
-## File en attente
+## Paiements du jour
 
-| Code | Chauffeur | Entreprise | Carburant | Montant | Temps |
-|---|---|---|---|---:|---:|
-| 6821 | Jean Mballa | TransLog Cameroun SARL | Super | 15 000 FCFA | 04:12 |
-| 4176 | Aïcha Ndom | SafeGuard SARL | Gasoil | 25 000 FCFA | 02:48 |
-| 9034 | Paul Essama | BuildCam SA | Gasoil | 40 000 FCFA | 01:25 |
+| Code | Chauffeur | Entreprise | Carburant | Montant | Heure | Statut |
+|---|---|---|---|---:|---:|---|
+| 6821 | Jean Mballa | TransLog Cameroun SARL | Super | 15 000 FCFA | 14:28 | À accuser |
+| 4176 | Aïcha Ndom | SafeGuard SARL | Gasoil | 25 000 FCFA | 13:52 | Accusé |
+| 9034 | Paul Essama | BuildCam SA | Gasoil | 40 000 FCFA | 12:07 | Accusé |
 
 ## Historique du jour
 
-- Transactions terminées : `18`
-- Montant total validé : `346 000 FCFA`
-- Refusées : `2`
-- Expirées : `1`
+- Paiements du jour : `18`
+- Montant total encaissé : `346 000 FCFA`
+- À accuser : `1`
+- Accusés : `17`
 
 ## Libellés
 
-`Rechercher un code`, `Valider la demande`, `Refuser`, `Confirmer la validation`, `En attente du PIN chauffeur`, `Retour aux demandes`, `Voir l'historique du jour`.
+`Rechercher un code`, `Accuser réception`, `Ouvrir la session`, `Fermer la session`, `Retour aux paiements`, `Voir l'historique du jour`.
 
 
 <!-- ==== SOURCE: 02-attendant-app/07-responsive-accessibility-and-quality.md ==== -->
@@ -1150,21 +1130,21 @@ Concevoir d'abord à 360 × 800 px, vérifier à 320 px de large et 390 × 844 p
 
 - Contraste élevé sous forte luminosité.
 - Code et montant lisibles sans approcher le téléphone.
-- Boutons de 48 px minimum avec espace entre valider et refuser.
+- Bouton `Accuser réception` de 48 px minimum, facile à atteindre au pouce.
 - Pas de geste caché pour une action métier.
-- File utilisable avec 0, 1, 5 et 20 demandes.
+- Liste utilisable avec 0, 1, 5 et 20 paiements.
 - Mise à jour de statut sans saut de mise en page perturbant.
 
 ## Accessibilité
 
-Lecteur d'écran : annoncer code, temps restant, montant, carburant et chauffeur dans un ordre stable. Ne pas annoncer la minuterie chaque seconde. Confirmer verbalement la validation et le fait que le chauffeur doit encore agir.
+Lecteur d'écran : annoncer code, montant, carburant, chauffeur et statut (`à accuser` / `accusé`) dans un ordre stable. Confirmer verbalement l'accusé de réception.
 
 ## Checklist
 
-- Station toujours visible.
+- Station et pompe en service toujours visibles.
 - Montant et carburant jamais éditables.
-- Expiration visible sur liste et détail.
-- Validation non confondue avec transaction terminée.
+- Distinction claire entre `À accuser` et `Accusé`.
+- Aucune action de validation ou de refus présentée.
 - État réseau visible sans couvrir les actions.
 - Manrope et palette Fusy respectées.
 - Aucune fonction Admin ou reversement.
@@ -1189,62 +1169,68 @@ le redessiner.
 - Montants au format `15 000 FCFA`, chiffres tabulaires.
 - Cibles tactiles ≥ 48 px. Chaque statut combine **couleur + texte**.
 
+## Règle métier essentielle (à ne pas confondre)
+
+Le chauffeur **paie directement** : scan du QR d'une station autorisée → saisie
+montant/carburant → **confirmation par PIN qui débite immédiatement** le compte
+entreprise et le budget. La demande **expire après 5 min** si le PIN n'est pas saisi.
+Aucun débit après blocage ou expiration. Le **pompiste ne valide ni ne refuse rien** :
+au moment où un paiement apparaît dans son app, il est **déjà réglé**. Le pompiste
+**consulte** le paiement (code, montant, carburant) pour servir le carburant et en
+**accuse réception**. États réels du paiement : `pending` (à confirmer) → `paid` →
+`expired` / `failed` / `refunded`. Il n'existe **aucun** état de validation pompiste.
+
 ## Architecture d'app (aiguillage par rôle)
 
-Conçois d'abord le **socle commun** partagé par les deux rôles : splash, activation par
-téléphone, saisie du code d'activation, création/confirmation du PIN, connexion. Après
-connexion, **le rôle du compte détermine l'expérience** : accueil Chauffeur ou accueil
-Pompiste. Montre clairement cet embranchement dans l'architecture de navigation. Ne
-demande jamais à l'utilisateur de « choisir un rôle » : il découle du compte.
+Conçois d'abord le **socle commun** : splash, activation par téléphone, saisie du code
+d'activation, création/confirmation du PIN, connexion. Après connexion, **le rôle du
+compte détermine l'expérience** : accueil Chauffeur ou espace Pompiste. Montre clairement
+cet embranchement. Ne demande jamais de « choisir un rôle » : il découle du compte.
 
 ## Écrans — rôle Chauffeur
 
 Accueil budget, permission caméra, scanner QR, résultat station autorisée / non
-autorisée, saisie montant + type carburant + champ libre, récapitulatif, attente
-pompiste avec code court et minuterie, refus, expiration, confirmation PIN après
-validation pompiste, succès/reçu, historique et détail transaction.
+autorisée, saisie montant + type carburant + champ libre, récapitulatif, **confirmation
+PIN avec minuterie (débit immédiat)**, expiration, succès/reçu **avec code court à
+présenter au pompiste**, historique et détail transaction. Il n'y a **pas** d'écran
+d'attente pompiste.
 
 ## Écrans — rôle Pompiste
 
-Accueil station + état réseau, file des demandes en attente, recherche par code court,
-détail en **lecture seule**, confirmation de validation, confirmation de refus, attente
-du PIN chauffeur (`En attente du chauffeur`), résultat terminé / refusé / expiré,
-historique du jour + total indicatif, profil/station/déconnexion.
+Connexion, **ouverture de session de travail sur une pompe** (+ QR de la pompe et état
+réseau), **liste des paiements du jour** (badge `À accuser` / `Accusé`), recherche par
+code court, **détail de paiement en lecture seule** avec action **`Accuser réception`**,
+confirmation d'accusé, historique du jour + total, profil avec **fermeture de session**.
+Aucun écran de validation, de refus ou d'attente de PIN chauffeur.
 
-## États obligatoires (à couvrir pour les écrans concernés)
+## États obligatoires
 
-Chargement, vide, hors ligne, réseau instable, permission caméra refusée (chauffeur),
-QR invalide, station non autorisée, budget insuffisant, compte entreprise insuffisant ou
-suspendu, PIN incorrect, pompiste refuse, expiration **avant et après** validation
-pompiste, envoi en cours empêchant le double envoi, reprise de l'app avec demande active,
-demande déjà traitée (pompiste), validation au statut inconnu.
-
-## Règle métier essentielle (rappel)
-
-Le chauffeur ne possède pas de wallet : son entreprise lui alloue un budget. Une
-transaction exige scan du QR d'une station autorisée → saisie montant/carburant →
-validation du pompiste (qui **ne modifie jamais** le montant) → confirmation PIN du
-chauffeur → débit. La demande **expire 5 min** après création. **Aucun débit** après
-blocage, refus ou expiration.
+Chargement, vide, hors ligne, réseau instable ; côté chauffeur : permission caméra
+refusée, QR invalide, station non autorisée, budget insuffisant, compte entreprise
+insuffisant ou suspendu, PIN incorrect, expiration avant confirmation, envoi en cours
+anti-double-envoi, reprise avec demande active ; côté pompiste : nouveau paiement à
+accuser, paiement déjà accusé sur un autre appareil, accusé au statut inconnu, aucune
+session ouverte, compte suspendu.
 
 ## Données d'exemple
 
 Chauffeur : Jean Mballa, TransLog Cameroun SARL, budget hebdomadaire 50 000 FCFA,
-transaction 15 000 FCFA (Super), code 6821, ID TX-8F21K9, 19 juin 2026 14:32.
-Pompiste : Armand Etoa, Tradex Bonamoussadi. Station scannée : Tradex Bonamoussadi.
+transaction 15 000 FCFA (Super), code 6821, ID TX-8F21K9, 19 juin 2026.
+Pompiste : Armand Etoa, Tradex Bonamoussadi, Pompe 1.
 
 ## Sortie attendue
 
 1. **Architecture de navigation unique** montrant le socle commun puis l'embranchement Chauffeur / Pompiste.
-2. Maquettes haute fidélité **390 × 844 px** (vérifiées aussi à **360 × 800 px**, cible Android d'entrée de gamme).
+2. Maquettes haute fidélité **390 × 844 px** (vérifiées aussi à **360 × 800 px**).
 3. **Tous** les écrans des deux rôles + les variantes critiques d'états.
-4. **Composants réutilisables** (boutons, champs, cartes, badges de statut, minuterie, code court) avec états normal, pressé, focus, chargement, désactivé, erreur.
+4. **Composants réutilisables** (boutons, champs, cartes, badges de statut, minuterie, code court, saisie PIN) avec états normal, pressé, focus, chargement, désactivé, erreur.
 5. Courtes annotations des décisions et transitions clés.
 
 ## Interdictions
 
-N'ajoute pas : recharge, Mobile Money, wallet B2C, microcrédit, promotions, carte des
-stations, itinéraire, géolocalisation, KYC, gestion d'entreprise, scanner QR côté
-pompiste, modification de montant, stock/prix carburant, encaissement, reversement,
-reporting multi-stations, fonctions Admin Fusy, ni sélection manuelle de rôle. N'invente
-aucune couleur, police ou variante de logo.
+N'ajoute pas : validation/refus pompiste, écran d'attente pompiste côté chauffeur,
+recharge, Mobile Money, wallet B2C, microcrédit, promotions, carte des stations,
+itinéraire, géolocalisation, KYC, gestion d'entreprise, scan QR côté pompiste,
+modification de montant, stock/prix carburant, encaissement, reversement, reporting
+multi-stations, fonctions Admin Fusy, ni sélection manuelle de rôle. N'invente aucune
+couleur, police ou variante de logo.

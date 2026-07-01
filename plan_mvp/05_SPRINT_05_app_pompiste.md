@@ -1,7 +1,7 @@
 # Sprint 5 — App Pompiste Flutter Android
 
 > **Semaines :** S9-S10  
-> **Objectif :** permettre aux pompistes de valider ou refuser les demandes carburant.  
+> **Objectif :** permettre aux pompistes de consulter les paiements effectués de leur station et d'en accuser réception.  
 > **Jalon :** app pompiste Android utilisable dans une station pilote.
 
 ---
@@ -14,11 +14,15 @@ Fonctions MVP :
 
 - activation/connexion pompiste ;
 - rattachement station ;
-- demandes en attente ;
+- ouverture/fermeture d'une session de travail sur une pompe ;
+- affichage du QR de la pompe en service ;
+- liste des paiements effectués du jour ;
+- accusé de réception d'un nouveau paiement ;
 - recherche par code court ;
-- validation/refus ;
 - historique du jour ;
 - état réseau simple.
+
+Le pompiste **ne valide ni ne refuse jamais** une transaction : au moment où un paiement apparaît, il est déjà réglé par le PIN du chauffeur.
 
 ---
 
@@ -33,22 +37,30 @@ Le pompiste se connecte avec :
 
 Le compte est créé par admin Fusy.
 
-### 2.2 Demandes En Attente
+### 2.2 Session de travail
 
-Afficher uniquement les demandes de la station du pompiste.
+- choix de la pompe ;
+- ouverture de la session ;
+- affichage du QR de la pompe pour le scan par les chauffeurs ;
+- fermeture de la session en fin de service.
 
-Informations :
+### 2.3 Paiements Du Jour
+
+Afficher uniquement les paiements de la station du pompiste, le plus récent en tête.
+
+Informations par ligne :
 
 - code court ;
 - chauffeur ;
 - entreprise ;
 - montant ;
 - type carburant ;
-- temps restant avant expiration.
+- heure ;
+- statut d'accusé (`à accuser` / `accusé`).
 
-### 2.3 Détail Demande
+### 2.4 Détail Paiement
 
-Le pompiste voit :
+Le pompiste voit, en lecture seule :
 
 - code court ;
 - montant ;
@@ -56,41 +68,38 @@ Le pompiste voit :
 - chauffeur ;
 - entreprise ;
 - station ;
-- bouton valider ;
-- bouton refuser.
+- bouton `Accuser réception` si le paiement n'est pas encore accusé.
 
-Le pompiste ne peut pas modifier le montant.
+Le pompiste ne peut ni modifier, ni valider, ni refuser.
 
-### 2.4 Historique Du Jour
+### 2.5 Historique Du Jour
 
 Afficher :
 
-- transactions validées ;
-- refusées ;
-- expirées ;
-- montant total du jour.
+- paiements du jour ;
+- montant total du jour ;
+- filtre simple (tous / à accuser / accusés).
 
 ---
 
-## 3. Règles De Validation
+## 3. Règles Métier
 
-- Une demande expirée ne peut pas être validée.
-- Un pompiste ne voit que les demandes de sa station.
-- Une demande refusée ne débite rien.
-- Après validation pompiste, le chauffeur doit confirmer par PIN.
-- La transaction n'est complète qu'après confirmation chauffeur.
+- Un pompiste ne voit que les paiements de sa station.
+- Un paiement apparaît déjà réglé : aucune action de validation ou de refus.
+- L'accusé de réception ne débite ni n'annule rien ; il confirme que le pompiste a vu la transaction.
+- Un nouveau paiement non accusé déclenche un SMS de secours après un délai ; l'accusé dans l'app lève ce rappel.
 
 ---
 
 ## 4. Tests Terrain À Prévoir
 
-- pompiste voit une demande créée par chauffeur ;
-- pompiste ne voit pas les demandes d'une autre station ;
-- pompiste valide dans le délai ;
-- pompiste refuse ;
-- demande expirée ;
+- pompiste voit un paiement effectué dans sa station ;
+- pompiste ne voit pas les paiements d'une autre station ;
+- pompiste accuse réception d'un paiement ;
+- paiement déjà accusé sur un autre appareil ;
+- ouverture/fermeture de session sur une pompe ;
 - réseau faible ;
-- code court vérifié.
+- recherche par code court.
 
 ---
 
@@ -98,9 +107,10 @@ Afficher :
 
 - App Flutter Android pompiste.
 - Connexion téléphone + PIN.
-- Liste demandes en attente.
-- Détail demande.
-- Validation/refus.
+- Session de travail sur pompe + QR.
+- Liste des paiements du jour.
+- Détail paiement en lecture seule.
+- Accusé de réception.
 - Historique du jour.
 
 ---
@@ -108,8 +118,7 @@ Afficher :
 ## 6. Critères De Validation
 
 - Un pompiste rattaché à une station peut se connecter.
-- Une demande chauffeur apparaît dans l'app pompiste.
-- Le pompiste peut valider ou refuser.
-- Le pompiste ne peut pas modifier le montant.
-- Une demande expirée n'est plus validable.
+- Un paiement effectué apparaît dans l'app pompiste.
+- Le pompiste peut accuser réception d'un paiement.
+- Le pompiste ne peut ni modifier, ni valider, ni refuser.
 - L'historique du jour est consultable.

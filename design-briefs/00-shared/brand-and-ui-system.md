@@ -91,7 +91,7 @@ Les cartes regroupent une seule idée. Préférer bordure et espace blanc aux om
 
 ### Statuts
 
-Badges textuels courts : `En attente`, `À confirmer`, `Terminée`, `Refusée`, `Expirée`, `Annulée`, `Bloquée`.
+Badges textuels courts alignés sur les états réels : `À confirmer` (pending), `Payée` (paid), `Expirée`, `Échouée`, `Remboursée`, plus `Bloquée` pour un échec de vérification avant création. Côté pompiste : `À accuser` / `Accusé`. Aucun badge de validation ou de refus pompiste.
 
 ### Iconographie
 

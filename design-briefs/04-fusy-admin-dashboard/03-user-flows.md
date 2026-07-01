@@ -40,7 +40,7 @@ Depuis l'entreprise, rechercher et sélectionner des stations actives, comparer 
 
 ## Recherche transaction
 
-Filtrer par ID, code, entreprise, station, chauffeur, statut et période. Le détail montre la chronologie et explique pourquoi une transaction est bloquée, refusée ou expirée.
+Filtrer par ID, code, entreprise, station, chauffeur, statut et période. Le détail montre la chronologie et explique pourquoi une transaction est bloquée, expirée ou échouée.
 
 ## Reversement
 

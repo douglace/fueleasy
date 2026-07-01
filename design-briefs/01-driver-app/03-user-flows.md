@@ -28,11 +28,11 @@ Après plusieurs erreurs, afficher une temporisation et une voie de support ou d
 4. L'app affiche la station et confirme `Station autorisée`.
 5. Jean saisit `15 000 FCFA`, choisit `Super` et renseigne éventuellement `LT-482-AA`.
 6. Un récapitulatif affiche station, montant, carburant et budget après opération.
-7. Jean crée la demande.
-8. L'écran indique `Présentez le code 6821 au pompiste` et `Expire dans 04:58`.
-9. Après validation du pompiste, l'écran devient `Le pompiste a validé`.
-10. Jean vérifie les détails et saisit son PIN.
-11. L'app bloque le double envoi, attend le résultat et affiche le reçu.
+7. Jean crée la demande : l'app affiche un récapitulatif non modifiable et demande le PIN.
+8. Un compteur `Expire dans 04:58` indique le délai pour confirmer.
+9. Jean saisit son PIN pour confirmer le paiement, débité immédiatement.
+10. L'app bloque le double envoi, attend le résultat et affiche le reçu avec le code `6821`.
+11. Jean présente le reçu (code 6821) au pompiste Armand, qui le sert puis accuse réception dans son app.
 
 ## 4. Station non autorisée
 
@@ -42,22 +42,18 @@ Après scan, l'app affiche le nom de la station, le blocage, l'absence de débit
 
 Le blocage intervient avant création. Le chauffeur voit la cause qu'il peut comprendre : son budget disponible ou l'indisponibilité du compte entreprise. Le solde exact de l'entreprise reste masqué.
 
-## 6. Refus du pompiste
+## 6. Expiration avant confirmation
 
-L'attente bascule vers `Demande refusée`. Le message précise qu'aucun montant n'a été débité. Actions : `Modifier la demande` ou `Retour à l'accueil`.
+La minuterie atteint zéro avant que Jean n'ait confirmé son PIN. L'app affiche `Demande expirée`, l'absence de débit et un bouton `Créer une nouvelle demande`. Elle ne tente pas de prolonger silencieusement la demande.
 
-## 7. Expiration
+## 7. PIN incorrect
 
-La minuterie atteint zéro avant une des validations. L'app affiche `Demande expirée`, absence de débit et bouton `Créer une nouvelle demande`. Elle ne tente pas de prolonger silencieusement la demande.
+Le récapitulatif reste visible, le champ PIN est vidé et l'erreur est annoncée. La minuterie continue. Après expiration, la confirmation devient impossible et aucun montant n'est débité.
 
-## 8. PIN incorrect après validation
-
-Le détail reste visible, le champ PIN est vidé et l'erreur est annoncée. La minuterie continue. Après expiration, la confirmation devient impossible.
-
-## 9. Reprise après perte réseau
+## 8. Reprise après perte réseau
 
 L'app conserve l'identifiant de la demande, affiche un bandeau hors ligne et resynchronise son statut. Elle ne crée jamais une deuxième demande automatiquement.
 
-## 10. Historique et reçu
+## 9. Historique et reçu
 
-Jean filtre mentalement par date grâce à une liste récente claire. Il ouvre une transaction, voit son statut, les acteurs, le montant et le code. Seules les transactions terminées disposent d'un reçu final.
+Jean parcourt une liste récente claire. Il ouvre une transaction, voit son statut, les acteurs, le montant et le code. Seules les transactions payées disposent d'un reçu final.

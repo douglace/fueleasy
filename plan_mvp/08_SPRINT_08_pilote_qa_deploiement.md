@@ -35,7 +35,6 @@ Obligatoire :
 - blocage solde entreprise insuffisant ;
 - blocage budget chauffeur insuffisant ;
 - transaction réussie ;
-- transaction refusée ;
 - transaction expirée ;
 - confirmation PIN ;
 - reçu ;
@@ -156,7 +155,8 @@ Go si :
 No-Go si :
 
 - débit financier incohérent ;
-- validation pompiste instable ;
+- confirmation PIN chauffeur instable ;
+- accusé de réception pompiste instable ;
 - app chauffeur ne scanne pas correctement QR sur appareils pilotes ;
 - reçu ou historique incohérent ;
 - aucune station pilote réellement prête ;

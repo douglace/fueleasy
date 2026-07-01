@@ -8,21 +8,21 @@ Concevoir d'abord à 360 × 800 px, vérifier à 320 px de large et 390 × 844 p
 
 - Contraste élevé sous forte luminosité.
 - Code et montant lisibles sans approcher le téléphone.
-- Boutons de 48 px minimum avec espace entre valider et refuser.
+- Bouton `Accuser réception` de 48 px minimum, facile à atteindre au pouce.
 - Pas de geste caché pour une action métier.
-- File utilisable avec 0, 1, 5 et 20 demandes.
+- Liste utilisable avec 0, 1, 5 et 20 paiements.
 - Mise à jour de statut sans saut de mise en page perturbant.
 
 ## Accessibilité
 
-Lecteur d'écran : annoncer code, temps restant, montant, carburant et chauffeur dans un ordre stable. Ne pas annoncer la minuterie chaque seconde. Confirmer verbalement la validation et le fait que le chauffeur doit encore agir.
+Lecteur d'écran : annoncer code, montant, carburant, chauffeur et statut (`à accuser` / `accusé`) dans un ordre stable. Confirmer verbalement l'accusé de réception.
 
 ## Checklist
 
-- Station toujours visible.
+- Station et pompe en service toujours visibles.
 - Montant et carburant jamais éditables.
-- Expiration visible sur liste et détail.
-- Validation non confondue avec transaction terminée.
+- Distinction claire entre `À accuser` et `Accusé`.
+- Aucune action de validation ou de refus présentée.
 - État réseau visible sans couvrir les actions.
 - Manrope et palette Fusy respectées.
 - Aucune fonction Admin ou reversement.

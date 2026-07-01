@@ -8,8 +8,8 @@ Exemples :
 
 - `Scanner une station` plutôt que `Démarrer le processus d'achat` ;
 - `Budget insuffisant` plutôt que `Transaction impossible` ;
-- `Aucun montant ne sera débité` après un refus ou une expiration ;
-- `Le pompiste a validé. Confirmez avec votre PIN.` plutôt que `Transaction validée`.
+- `Aucun montant ne sera débité` après un blocage ou une expiration ;
+- `Confirmez le paiement avec votre PIN.` plutôt que `Valider la transaction`.
 
 ## Terminologie stable
 
@@ -18,9 +18,9 @@ Exemples :
 | Compte carburant | Argent réellement disponible pour les dépenses de l'entreprise. |
 | Budget chauffeur | Autorisation de dépense attribuée à un chauffeur. |
 | Station autorisée | Station dans laquelle l'entreprise accepte les transactions. |
-| Demande carburant | Transaction en cours de validation. |
-| Code court | Code à quatre chiffres permettant au pompiste de retrouver et vérifier la demande. |
-| Reçu | Preuve finale d'une transaction terminée. |
+| Demande carburant | Transaction créée, en attente de la confirmation PIN du chauffeur. |
+| Code court | Code à quatre chiffres permettant au pompiste de retrouver le paiement effectué. |
+| Reçu | Preuve finale d'une transaction payée. |
 
 Ne pas utiliser `wallet`, `crédit` ou `paiement effectué` lorsque le sens métier est budget, compte ou demande en attente.
 
@@ -90,6 +90,6 @@ Utiliser des données camerounaises plausibles sans reprendre de données person
 - Le sujet de l'action est clair.
 - Le statut est compréhensible sans connaître les termes internes.
 - `FCFA` est visible avec chaque montant critique.
-- Le message précise l'absence de débit après refus, expiration ou blocage.
+- Le message précise l'absence de débit après blocage ou expiration.
 - Le bouton décrit l'action, pas une réponse vague comme `Oui`.
 - Les actions irréversibles nomment l'entité concernée.

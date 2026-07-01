@@ -34,7 +34,7 @@ Les exports se trouvent dans Transactions et Rapports, pas comme destination pri
 1. Solde du compte carburant et état opérationnel.
 2. Action `Ajouter un chauffeur`.
 3. Indicateurs : chauffeurs actifs, budgets configurés, consommation de la période.
-4. Alertes : solde bas, activation en attente, budget épuisé, transactions refusées.
+4. Alertes : solde bas, activation en attente, budget épuisé, transactions bloquées.
 5. Activité récente.
 
 ## Règles de données

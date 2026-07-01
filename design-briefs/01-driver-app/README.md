@@ -24,4 +24,4 @@ Flutter Android et iOS. Design mobile-first, utilisable sur petits téléphones 
 
 ## Résultat attendu
 
-Une proposition haute fidélité couvrant activation, accueil, scan QR, demande, attente pompiste, confirmation PIN, reçu, historique et tous les blocages critiques.
+Une proposition haute fidélité couvrant activation, accueil, scan QR, demande, confirmation PIN (débit immédiat), reçu avec code court, historique et tous les blocages critiques.

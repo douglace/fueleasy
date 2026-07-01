@@ -77,14 +77,15 @@ Avant création, l'API vérifie :
 
 ### 2.5 Confirmation PIN
 
-Après validation pompiste :
+Directement après le récapitulatif (aucune validation pompiste préalable) :
 
 - afficher montant ;
 - station ;
 - type carburant ;
-- code court ;
+- minuterie d'expiration (5 min) ;
 - bouton confirmer ;
-- saisie PIN obligatoire.
+- saisie PIN obligatoire (le débit est immédiat) ;
+- code court affiché ensuite sur le reçu, à présenter au pompiste.
 
 ### 2.6 Historique Et Reçus
 
@@ -100,10 +101,9 @@ Afficher :
 
 Notifications dans l'app :
 
-- transaction en attente ;
-- pompiste a validé ;
+- demande créée (à confirmer par PIN) ;
+- paiement confirmé (présenter le code au pompiste) ;
 - transaction réussie ;
-- transaction refusée ;
 - transaction expirée ;
 - solde entreprise insuffisant.
 
@@ -148,4 +148,4 @@ Pas de push FCM au MVP.
 - Un montant supérieur au budget bloque le parcours.
 - Un solde entreprise insuffisant bloque le parcours.
 - Une demande valide est créée.
-- Le chauffeur peut confirmer par PIN après validation pompiste.
+- Le chauffeur confirme la transaction par PIN et le débit est immédiat.

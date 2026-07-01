@@ -8,16 +8,16 @@ Manrope uniquement ; bleu `#003362`, vert accent `#00B473`, fond `#F6F8FA`, surf
 
 ## Règle métier essentielle
 
-Le pompiste voit uniquement les demandes de sa station. Il vérifie code, chauffeur, entreprise, montant et carburant. Il peut valider ou refuser, mais jamais modifier. Après validation, la transaction reste incomplète jusqu'au PIN du chauffeur. La demande expire cinq minutes après sa création.
+Le pompiste voit uniquement les paiements **déjà effectués** de sa station. Chaque paiement est réglé par le PIN du chauffeur au moment où il apparaît : le pompiste ne valide pas, ne refuse pas et ne modifie jamais. Son rôle est de **consulter** le paiement (code, chauffeur, entreprise, montant, carburant) pour servir le bon volume, puis d'en **accuser réception**. Il ouvre une session de travail sur une pompe en début de service et la ferme à la fin.
 
 ## Concevoir
 
-Connexion, accueil station/état réseau, file des demandes, recherche code court, détail en lecture seule, confirmation de validation, confirmation de refus, attente PIN chauffeur, résultat terminé/refusé/expiré, historique du jour et détail transaction.
+Connexion, ouverture de session (choix de la pompe), session en cours avec QR de la pompe et état réseau, liste des paiements du jour (badge `À accuser` / `Accusé`), recherche par code court, détail de paiement en lecture seule avec action `Accuser réception`, confirmation d'accusé, historique du jour et total, détail transaction, profil avec fermeture de session.
 
-Inclure chargement, liste vide, réseau instable, demande expirée pendant lecture, demande déjà traitée, validation au statut inconnu et compte suspendu.
+Inclure chargement, liste vide, réseau instable, nouveau paiement à accuser, paiement déjà accusé sur un autre appareil, accusé au statut inconnu, aucune session ouverte et compte suspendu.
 
-Utiliser Armand Etoa, Tradex Bonamoussadi, Jean Mballa, TransLog Cameroun SARL, Super, 15 000 FCFA, code 6821 et ID TX-8F21K9.
+Utiliser Armand Etoa, Tradex Bonamoussadi, Pompe 1, Jean Mballa, TransLog Cameroun SARL, Super, 15 000 FCFA, code 6821 et ID TX-8F21K9.
 
 ## Sortie
 
-Architecture mobile, maquettes haute fidélité 360 × 800 px, variantes critiques, composants et annotations de transition. N'ajoute ni scan QR, modification de montant, stock carburant, prix, encaissement, reversement, reporting multi-stations, création de compte ou fonctions Admin Fusy.
+Architecture mobile, maquettes haute fidélité 360 × 800 px, variantes critiques, composants et annotations de transition. N'ajoute ni validation/refus de transaction, scan QR, modification de montant, stock carburant, prix, encaissement, reversement, reporting multi-stations, création de compte ou fonctions Admin Fusy.

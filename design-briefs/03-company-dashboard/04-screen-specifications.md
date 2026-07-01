@@ -46,4 +46,4 @@ Choix CSV/PDF, rappel des filtres actifs, état de génération, succès et éch
 
 ## 12. Rapports simples
 
-Filtres partagés, indicateurs total consommé, nombre, refusées, expirées, puis répartitions simples par chauffeur et station. Préférer tableaux et barres sobres ; pas de dashboard BI complexe.
+Filtres partagés, indicateurs total consommé, nombre, bloquées, expirées, puis répartitions simples par chauffeur et station. Préférer tableaux et barres sobres ; pas de dashboard BI complexe.

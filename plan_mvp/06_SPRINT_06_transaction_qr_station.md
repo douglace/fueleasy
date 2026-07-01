@@ -12,29 +12,27 @@ Finaliser le coeur métier du MVP :
 
 - scan QR station ;
 - vérifications avant création ;
-- demande en attente ;
-- validation pompiste ;
-- confirmation PIN chauffeur ;
+- demande créée (en attente de confirmation PIN) ;
+- confirmation PIN chauffeur (débit immédiat) ;
 - débit compte entreprise ;
 - débit budget chauffeur ;
 - expiration 5 minutes ;
-- reçu.
+- reçu ;
+- consultation et accusé de réception côté pompiste.
 
 ---
 
 ## 2. États De Transaction
 
-États MVP :
+États réels du paiement (`app/Domain/Payments/PaymentStatus.php`) :
 
-- `pending_attendant_validation` ;
-- `attendant_approved` ;
-- `completed` ;
-- `rejected` ;
-- `expired` ;
-- `cancelled` ;
-- `blocked`.
+- `pending` (demande créée, en attente de confirmation PIN) ;
+- `paid` (PIN confirmé, débits effectués, reçu généré) ;
+- `expired` (5 minutes dépassées sans confirmation) ;
+- `failed` (confirmation échouée, aucun débit) ;
+- `refunded` (remboursement a posteriori depuis le back-office).
 
-`blocked` correspond aux tentatives bloquées avant création financière : station non autorisée, solde insuffisant, budget insuffisant, statut invalide.
+Un échec des vérifications avant création bloque la transaction **avant enregistrement** (station non autorisée, solde insuffisant, budget insuffisant, statut invalide) : aucun paiement n'est créé, il n'existe donc pas d'état persisté pour ce cas. Il n'existe **aucun état de validation ou de refus pompiste**.
 
 ---
 
@@ -61,25 +59,21 @@ Si une vérification échoue, aucune transaction financière n'est créée. Un �
 Règle :
 
 - la demande expire 5 minutes après sa création ;
-- si le pompiste ne valide pas dans les 5 minutes, statut `expired` ;
-- si le pompiste valide mais que le chauffeur ne confirme pas dans les 5 minutes, statut `expired` ;
+- si le chauffeur ne confirme pas son PIN dans les 5 minutes, statut `expired` ;
 - aucun débit si expiration.
 
 ---
 
 ## 5. Débit Final
 
-Le débit a lieu seulement après :
-
-1. validation pompiste ;
-2. confirmation PIN chauffeur.
+Le débit a lieu à la **confirmation PIN du chauffeur**.
 
 À ce moment :
 
 - solde entreprise diminué ;
 - budget chauffeur diminué ;
 - reçu généré ;
-- transaction `completed`.
+- transaction `paid`.
 
 Le débit doit être atomique pour éviter les incohérences.
 
@@ -110,13 +104,12 @@ Le reçu contient :
 - station non autorisée bloquée avant création ;
 - solde entreprise insuffisant bloqué avant création ;
 - budget chauffeur insuffisant bloqué avant création ;
-- pompiste refuse ;
 - chauffeur PIN incorrect ;
-- expiration avant validation pompiste ;
-- expiration après validation pompiste mais avant confirmation chauffeur ;
+- expiration avant confirmation PIN ;
 - double confirmation impossible ;
 - débit atomique ;
-- reçu généré.
+- reçu généré ;
+- accusé de réception pompiste enregistré.
 
 ---
 
@@ -136,6 +129,6 @@ Le reçu contient :
 
 - Le flux complet marche de bout en bout.
 - Une transaction réussie débite les bons soldes.
-- Une transaction refusée/expirée ne débite rien.
+- Une transaction expirée ou bloquée ne débite rien.
 - Les statuts sont cohérents dans les apps et dashboards.
 - Les reçus sont disponibles.

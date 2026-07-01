@@ -46,31 +46,27 @@ Station verrouillée, champ montant numérique avec suffixe FCFA, choix `Super` 
 
 ## 10. Récapitulatif
 
-Répéter station, montant, carburant, information libre et budget estimé après opération. Action `Envoyer au pompiste`, secondaire `Modifier`. Préciser que le débit n'a pas encore lieu.
+Répéter station, montant, carburant, information libre et budget estimé après opération. Action `Confirmer avec le PIN`, secondaire `Modifier`. Préciser que le débit intervient à la confirmation du PIN.
 
-## 11. Attente pompiste
+## 11. Confirmation PIN
 
-Code court `6821` dominant, minuterie, montant, carburant, station, texte `Présentez ce code au pompiste`. Statut actualisé automatiquement. Action discrète `Annuler la demande` avec confirmation.
+Récapitulatif non modifiable (station, montant, carburant), minuterie restante `Expire dans 04:32`, saisie PIN à quatre chiffres et action `Confirmer 15 000 FCFA` (le nom du bouton inclut le montant). Anti double-envoi pendant la confirmation. Il n'existe aucun écran d'attente pompiste : la confirmation débite immédiatement.
 
-## 12. Refus ou expiration
+## 12. Expiration
 
-Page de résultat avec libellé explicite, cause lorsqu'elle est disponible, `Aucun montant n'a été débité`, et action adaptée : modifier, recommencer ou accueil.
+Page de résultat `Demande expirée`, cause lorsqu'elle est disponible, `Aucun montant n'a été débité`, et action adaptée : recommencer ou accueil.
 
-## 13. Confirmation PIN
+## 13. Succès et reçu
 
-Titre `Le pompiste a validé`, récapitulatif non modifiable, minuterie restante, PIN à quatre chiffres et action `Confirmer 15 000 FCFA`. Le nom du bouton inclut le montant.
+État `Transaction payée`, montant, station, date/heure, carburant, ID, code court à présenter au pompiste, nom du pompiste et nouveau budget. Actions : `Voir le reçu` et `Retour à l'accueil`.
 
-## 14. Succès et reçu
-
-État `Transaction terminée`, montant, station, date/heure, carburant, ID, code, pompiste et nouveau budget. Actions : `Voir le reçu` et `Retour à l'accueil`.
-
-## 15. Historique
+## 14. Historique
 
 Liste groupée par date avec station, montant, carburant et statut. Les montants sont alignés. États : chargement, vide, erreur, pagination ou chargement progressif simple.
 
-## 16. Détail transaction
+## 15. Détail transaction
 
-Chronologie courte du statut, toutes les données du reçu, identifiant copiable et action de partage/téléchargement seulement si prévue par l'implémentation du reçu. Pour une transaction non terminée, afficher `Ce document n'est pas un reçu final`.
+Chronologie courte du statut, toutes les données du reçu, identifiant copiable et action de partage/téléchargement seulement si prévue par l'implémentation du reçu. Pour une transaction non payée, afficher `Ce document n'est pas un reçu final`.
 
 ## Écrans de blocage transversaux
 

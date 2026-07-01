@@ -21,7 +21,7 @@
 
 - `3 chauffeurs attendent leur activation.`
 - `2 chauffeurs ont épuisé leur budget.`
-- `4 transactions ont été refusées cette semaine.`
+- `4 transactions ont été bloquées cette semaine.`
 
 ## Filtres transactions
 

@@ -11,8 +11,7 @@
 - Saisie du montant et du type de carburant.
 - Champ libre véhicule, plaque ou mission lorsqu'il est demandé.
 - Création d'une demande valable cinq minutes.
-- Attente de la décision du pompiste.
-- Confirmation finale avec PIN.
+- Confirmation du paiement avec PIN (débit immédiat).
 - Historique personnel et reçus.
 
 ## Hors périmètre
@@ -26,9 +25,8 @@ Accueil
 ├── Scanner une station
 │   ├── Station reconnue
 │   ├── Détails de la demande
-│   ├── Attente pompiste
-│   ├── Confirmation PIN
-│   └── Reçu
+│   ├── Confirmation PIN (récapitulatif + minuterie)
+│   └── Reçu (avec code court)
 ├── Historique
 │   └── Détail transaction / reçu
 └── Profil
@@ -59,6 +57,6 @@ Au retour, le chauffeur utilise `Téléphone → PIN`. Le code d'activation ne d
 ## Règles de retour
 
 - Avant création de la demande : retour possible sans conséquence.
-- Après création : demander confirmation avant annulation.
-- Après validation pompiste : retour ne doit pas perdre l'étape de confirmation PIN.
+- Après création : demander confirmation avant annulation, car la demande active court sur cinq minutes.
+- Pendant la saisie du PIN : le retour ne doit pas perdre la demande active ni son minuteur.
 - Une demande active doit être restaurée après fermeture ou reprise de l'app.

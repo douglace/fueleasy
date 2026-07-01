@@ -24,7 +24,7 @@ Quatre positions, saisie masquée, erreur annoncée, clavier numérique et prote
 
 ### Code court et minuterie
 
-Code très lisible, chiffres tabulaires, libellé `Code à donner au pompiste`. Minuterie textuelle `Expire dans 04:32`, puis avertissement sans clignotement agressif sous une minute.
+Code très lisible, chiffres tabulaires, libellé `Code à présenter au pompiste`, affiché sur le reçu après paiement. La minuterie textuelle `Expire dans 04:32` accompagne l'écran de confirmation PIN, avec un avertissement sans clignotement agressif sous une minute.
 
 ### Carte Transaction
 
@@ -54,11 +54,10 @@ Station, date, carburant, montant, badge textuel. Toute la carte peut ouvrir le 
 - Station non autorisée : `Votre entreprise n'autorise pas les achats dans cette station.`
 - Budget insuffisant : `Votre budget disponible est de {budget}. Saisissez un montant inférieur ou contactez votre responsable.`
 - Solde entreprise : `Le compte carburant de votre entreprise est temporairement insuffisant. Contactez votre responsable.`
-- Refus : `Le pompiste a refusé cette demande. Aucun montant n'a été débité.`
-- Expiration : `La demande a expiré après 5 minutes. Aucun montant n'a été débité.`
+- Expiration : `La demande a expiré après 5 minutes sans confirmation. Aucun montant n'a été débité.`
 - PIN incorrect : `PIN incorrect. Vérifiez puis réessayez avant l'expiration.`
 - Réseau : `Connexion instable. Nous vérifions le statut de votre demande.`
 
 ## État vide
 
-Historique vide : `Aucune transaction pour le moment` puis `Votre premier reçu apparaîtra ici après une transaction terminée.` L'action peut retourner à l'accueil, pas lancer automatiquement la caméra.
+Historique vide : `Aucune transaction pour le moment` puis `Votre premier reçu apparaîtra ici après une transaction payée.` L'action peut retourner à l'accueil, pas lancer automatiquement la caméra.

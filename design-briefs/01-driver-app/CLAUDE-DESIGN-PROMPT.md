@@ -16,15 +16,15 @@ Lis et respecte tous les documents joints dans `design-briefs/00-shared/` et `de
 
 ## Produit
 
-Le chauffeur ne possède pas un wallet. Son entreprise lui attribue un budget de dépense. Une transaction exige le scan du QR fixe d'une station autorisée, la validation du pompiste, puis la confirmation finale du chauffeur avec son PIN. La demande expire cinq minutes après sa création. Aucun débit n'a lieu après blocage, refus ou expiration.
+Le chauffeur ne possède pas un wallet. Son entreprise lui attribue un budget de dépense. Une transaction exige le scan du QR fixe d'une station autorisée, la saisie du montant et du carburant, puis la confirmation du chauffeur avec son PIN, qui débite immédiatement le compte entreprise et le budget. La demande expire cinq minutes après sa création si le PIN n'est pas saisi. Aucun débit n'a lieu après blocage ou expiration. Le pompiste ne valide ni ne refuse la transaction : il consulte les paiements de sa station et en accuse réception.
 
 ## Écrans à concevoir
 
-Activation par téléphone, code d'activation, création/confirmation PIN, connexion, accueil, permission caméra, scanner QR, résultat station autorisée/non autorisée, saisie montant/carburant/champ libre, récapitulatif, attente pompiste avec code court et minuterie, refus, expiration, confirmation PIN après validation pompiste, succès/reçu, historique et détail transaction.
+Activation par téléphone, code d'activation, création/confirmation PIN, connexion, accueil, permission caméra, scanner QR, résultat station autorisée/non autorisée, saisie montant/carburant/champ libre, récapitulatif, confirmation PIN avec minuterie, expiration, succès/reçu avec code court à présenter au pompiste, historique et détail transaction.
 
 ## États obligatoires
 
-Chargement, vide, hors ligne, réseau instable, permission caméra refusée, QR invalide, station non autorisée, budget insuffisant, compte entreprise insuffisant ou suspendu, PIN incorrect, pompiste refuse, expiration avant et après validation pompiste, confirmation en cours empêchant le double envoi, reprise de l'app avec demande active.
+Chargement, vide, hors ligne, réseau instable, permission caméra refusée, QR invalide, station non autorisée, budget insuffisant, compte entreprise insuffisant ou suspendu, PIN incorrect, expiration avant confirmation, confirmation en cours empêchant le double envoi, reprise de l'app avec demande active.
 
 ## Données à utiliser
 

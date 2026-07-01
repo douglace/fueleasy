@@ -4,42 +4,38 @@
 
 Logo, téléphone, PIN, bouton `Se connecter`, aide courte. États : erreur PIN, compte suspendu, non rattaché, hors ligne.
 
-## 2. Accueil / station
+## 2. Ouverture de session
 
-En-tête avec station, état réseau et nombre de demandes. Action de recherche par code, liste triée par expiration la plus proche.
+Après connexion, choisir la pompe pour ouvrir une session de travail. Afficher la station rattachée. Bouton `Ouvrir la session`. Si une session est déjà ouverte, proposer de la reprendre.
 
-## 3. Demandes en attente
+## 3. Session en cours / QR pompe
 
-Chaque ligne affiche code dominant, temps restant, montant, carburant, chauffeur et entreprise. État vide : `Aucune demande en attente dans cette station`.
+En-tête station + pompe, état réseau, QR de la pompe affiché en grand pour le scan par les chauffeurs, accès rapide aux paiements du jour et à la recherche par code, action `Fermer la session`.
 
-## 4. Recherche par code court
+## 4. Paiements du jour
+
+Liste des paiements effectués de la station, le plus récent en tête. Chaque ligne affiche code court dominant, montant, carburant, chauffeur, entreprise, heure et un badge `À accuser` ou `Accusé`. État vide : `Aucun paiement aujourd'hui dans cette station`.
+
+## 5. Recherche par code court
 
 Clavier numérique, quatre positions, résultat exact. Autoriser correction rapide et soumission automatique après quatre chiffres sans empêcher le bouton explicite.
 
-## 5. Détail demande
+## 6. Détail paiement
 
-Code, minuterie, montant, carburant, chauffeur, entreprise et station. Toutes les valeurs sont en lecture seule. Bouton principal `Valider la demande`, bouton destructif secondaire `Refuser` visuellement séparé.
+Code, montant, carburant, chauffeur, entreprise, station, heure et identifiant. Toutes les valeurs sont en **lecture seule**. Si le paiement n'est pas encore accusé, bouton principal `Accuser réception`. Aucune action de validation, de refus ou de modification.
 
-## 6. Confirmation validation
+## 7. Confirmation d'accusé
 
-Modal ou feuille récapitulant code, montant, carburant et chauffeur. Actions `Confirmer la validation` et `Retour`. Aucun PIN pompiste demandé au MVP.
+Retour léger (feuille ou bandeau) : `Réception accusée`. Le paiement passe au badge `Accusé`. Aucun débit, aucune annulation ne découle de cette action.
 
-## 7. Confirmation refus
+## 8. Historique du jour
 
-Explique l'absence de débit. Motif optionnel seulement s'il est prévu côté produit ; sinon confirmation simple. Action `Refuser la demande`.
+Résumé : nombre de paiements et montant total du jour. Liste avec filtre simple (tous / à accuser / accusés). Ne pas présenter le total comme un solde à retirer.
 
-## 8. Résultat
+## 9. Détail transaction
 
-Variantes : `En attente du chauffeur`, `Transaction terminée`, `Demande refusée`, `Demande expirée`. Chaque variante indique la prochaine action.
+Statut, chauffeur, entreprise, montant, carburant, date/heure, code, ID et rôle du pompiste. Le reçu final appartient au paiement payé.
 
-## 9. Attente chauffeur
+## 10. Profil
 
-Montant et code visibles, texte `Demandez au chauffeur de confirmer dans son app`, minuterie restante, mise à jour automatique.
-
-## 10. Historique du jour
-
-Résumé : transactions terminées et montant total. Liste avec filtres simples de statut. Ne pas présenter le total comme un solde à retirer.
-
-## 11. Détail transaction
-
-Statut, chauffeur, entreprise, montant, carburant, date/heure, code, ID et preuve du rôle du pompiste. Une transaction non terminée n'est pas un reçu final.
+Identité du pompiste, station, session de travail en cours, action `Fermer la session` et `Déconnexion`.

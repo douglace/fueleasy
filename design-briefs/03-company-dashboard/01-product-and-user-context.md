@@ -17,7 +17,7 @@ Une même personne peut couvrir les deux rôles au MVP. Le dashboard ne nécessi
 - Faut-il réalimenter le compte carburant ?
 - Quels chauffeurs n'ont plus de budget ou ne sont pas activés ?
 - Quelle consommation a eu lieu sur une période ?
-- Quelle transaction a été refusée, bloquée ou expirée ?
+- Quelle transaction a été bloquée ou expirée ?
 - Quelles stations sont actuellement autorisées ?
 - Quel export fournir à la comptabilité ?
 
@@ -26,7 +26,7 @@ Une même personne peut couvrir les deux rôles au MVP. Le dashboard ne nécessi
 - Croire que les budgets réservés diminuent le solde entreprise.
 - S'inquiéter lorsque la somme des budgets dépasse le solde.
 - Confondre un chauffeur invité avec un chauffeur actif.
-- Interpréter une demande refusée comme une dépense.
+- Interpréter une demande bloquée ou expirée comme une dépense.
 - Chercher à modifier directement les stations autorisées alors que Fusy les gère au MVP.
 
 ## Priorités de design

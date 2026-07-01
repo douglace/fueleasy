@@ -63,7 +63,7 @@ Le doc `apps/platform/docs/architecture.md` décrit la cible :
 
 Acteurs : **Admin Fusy**, **Entreprise** (compte carburant prépayé), **Chauffeur** (budget + PIN 4 chiffres), **Pompiste**, **Station** (QR fixe).
 
-Flux transaction de référence (voir `plan_mvp/00_OVERVIEW.md` §5) : le chauffeur scanne le QR station → Fusy vérifie (station autorisée pour l'entreprise, chauffeur/entreprise/station actifs, budget chauffeur, solde entreprise) **avant création** → le chauffeur saisit montant + type carburant → demande valable **5 min** → le pompiste valide/refuse (il ne modifie jamais le montant) → le chauffeur confirme par **PIN** → débit du compte entreprise **et** du budget chauffeur → reçu généré.
+Flux transaction de référence (voir `plan_mvp/00_OVERVIEW.md` §5) : le chauffeur scanne le QR station → Fusy vérifie (station autorisée pour l'entreprise, chauffeur/entreprise/station actifs, budget chauffeur, solde entreprise) **avant création** → le chauffeur saisit montant + type carburant → demande valable **5 min** → le chauffeur **confirme par PIN** → débit **immédiat** du compte entreprise **et** du budget chauffeur → reçu généré. Le **pompiste ne valide ni ne refuse** : il **consulte** les paiements de sa station (jour, recherche par code) et **accuse réception** de l'alerte ; il ne modifie jamais le montant. États réels du paiement (`app/Domain/Payments/PaymentStatus.php`) : `Pending → Paid → Expired/Failed/Refunded` — il n'existe aucun état de validation pompiste.
 
 Distinction structurante à préserver dans l'UI et le code : le **budget chauffeur** (enveloppe d'autorisation) n'est pas le **solde du compte carburant entreprise** (argent réel prépayé). Un reset de budget *remplace* le solde restant, il ne l'additionne pas.
 

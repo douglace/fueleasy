@@ -33,8 +33,8 @@ Le MVP est volontairement B2B et fermé. Les entreprises sont créées par Fusy 
 | Dashboards web | Laravel backend + Inertia React |
 | Stations autorisées | Liste définie par entreprise uniquement |
 | QR station | QR fixe par station, désactivable/remplaçable |
-| Validation transaction | Pompiste valide d'abord, chauffeur confirme ensuite par PIN |
-| PIN chauffeur | Obligatoire pour chaque transaction validée par pompiste |
+| Validation transaction | Le chauffeur confirme par PIN, débit immédiat. Le pompiste ne valide pas : consultation + accusé de réception |
+| PIN chauffeur | Obligatoire pour confirmer chaque transaction |
 | Expiration transaction | 5 minutes |
 | Budget chauffeur | Manuel, hebdomadaire ou mensuel |
 | Reset budget | Remplace le solde restant, ne l'ajoute pas |
@@ -90,7 +90,7 @@ Permet à une entreprise de gérer :
 - transactions ;
 - reçus ;
 - exports CSV/PDF ;
-- alertes de solde bas ou refus.
+- alertes de solde bas ou de blocage de transaction.
 
 ### 4.3 App Chauffeur
 
@@ -101,7 +101,7 @@ Permet au chauffeur de :
 - consulter son budget disponible ;
 - scanner le QR fixe station ;
 - saisir montant et type carburant ;
-- confirmer par PIN après validation pompiste ;
+- confirmer le paiement par PIN ;
 - consulter historique et reçus.
 
 ### 4.4 App Pompiste
@@ -109,12 +109,12 @@ Permet au chauffeur de :
 Permet au pompiste de :
 
 - se connecter avec téléphone + PIN ;
-- voir les demandes en attente pour sa station ;
-- vérifier le code court ;
-- valider ou refuser ;
-- consulter l'historique du jour.
+- consulter les paiements effectués du jour pour sa station ;
+- rechercher un paiement par son code court ;
+- accuser réception de l'alerte d'un nouveau paiement ;
+- consulter l'historique du jour et le total indicatif.
 
-Le pompiste ne modifie jamais le montant. Si le montant est faux, il refuse et le chauffeur recrée la demande.
+Le pompiste ne valide ni ne refuse une transaction et ne modifie jamais le montant : le paiement est déjà confirmé par le PIN du chauffeur. Son app sert uniquement à consulter les paiements et à en accuser réception.
 
 ---
 
@@ -128,10 +128,10 @@ Le pompiste ne modifie jamais le montant. Si le montant est faux, il refuse et l
 6. Si une vérification échoue, la transaction est bloquée avant création.
 7. Chauffeur saisit montant et type carburant.
 8. Une demande est créée pour 5 minutes.
-9. Pompiste valide ou refuse dans l'app pompiste.
-10. Si validée, chauffeur confirme par PIN.
-11. Fusy débite le compte entreprise et le budget chauffeur.
-12. Reçu généré et visible côté chauffeur, entreprise, station et admin.
+9. Chauffeur confirme par PIN dans ce délai.
+10. Fusy débite immédiatement le compte entreprise et le budget chauffeur.
+11. Reçu généré et visible côté chauffeur, entreprise, station et admin.
+12. Le pompiste voit le paiement dans son app, le retrouve par code au besoin et en accuse réception.
 
 ---
 
@@ -170,7 +170,7 @@ Sont explicitement exclus :
 | Sprint 2 | S3-S4 | Dashboard admin Fusy | Fusy peut créer entreprises, stations, pompistes |
 | Sprint 3 | S5-S6 | Dashboard entreprise | Entreprise peut gérer chauffeurs, budgets, stations autorisées |
 | Sprint 4 | S7-S8 | App chauffeur Flutter Android/iOS | Chauffeur peut activer compte et initier demande |
-| Sprint 5 | S9-S10 | App pompiste Flutter Android | Pompiste peut valider/refuser |
+| Sprint 5 | S9-S10 | App pompiste Flutter Android | Pompiste peut consulter les paiements et accuser réception |
 | Sprint 6 | S11-S12 | Flux QR station complet | Transaction carburant complète de bout en bout |
 | Sprint 7 | S13-S14 | Reporting, exports, reversements | Exports et lots hebdomadaires disponibles |
 | Sprint 8 | S15-S16 | QA, pilote, déploiement | Go/No-Go pilote |
@@ -196,8 +196,8 @@ Sont explicitement exclus :
 - Un chauffeur peut scanner un QR station fixe.
 - Une station non autorisée bloque la transaction avant création.
 - Un solde entreprise insuffisant bloque la transaction avant création.
-- Un pompiste peut valider ou refuser une demande.
-- Le chauffeur confirme par PIN.
+- Le chauffeur confirme la transaction par PIN et le débit est immédiat.
+- Le pompiste consulte le paiement effectué et en accuse réception.
 - La transaction expire après 5 minutes si non finalisée.
 - Le reçu est consultable.
 - Les exports CSV/PDF sont disponibles.
@@ -212,7 +212,7 @@ Sont explicitement exclus :
 | Adoption pompiste faible | Élevé | App pompiste minimaliste, formation station, 3 à 5 stations maximum |
 | Solde entreprise insuffisant en station | Élevé | Blocage avant création, alertes solde bas, statut visible côté chauffeur |
 | Confusion budget vs argent réel | Élevé | Séparer budget chauffeur et compte carburant entreprise dans l'interface |
-| QR fixe copié | Moyen | Validation pompiste obligatoire, QR désactivable, station affichée avant saisie |
+| QR fixe copié | Moyen | Transaction liée à un chauffeur authentifié par PIN et à une station autorisée, QR désactivable/remplaçable, station affichée avant saisie |
 | Complexité front web | Moyen | Inertia React simple, composants sobres, pas de design system lourd |
 | Réglementaire paiement | Élevé | Pilote fermé, recharge manuelle, pas de micro-crédit, validation juridique avant extension |
 | Support terrain trop lourd | Moyen | Limiter à 3 entreprises minimum, cible 5 si maîtrisé |
