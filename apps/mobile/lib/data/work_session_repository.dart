@@ -9,6 +9,14 @@ class WorkSessionRepository {
 
   final Dio _dio;
 
+  /// Pompes actives de la station du pompiste (pour choisir où ouvrir une session).
+  Future<List<PumpRef>> pumps() => runApi(
+    () => _dio.get('station/pumps'),
+    (data) => ((data as Map<String, dynamic>)['data'] as List)
+        .map((e) => PumpRef.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
+
   Future<WorkSessionQr> open(int pumpId) => runApi(
     () => _dio.post('work-sessions', data: {'pump_id': pumpId}),
     (data) => WorkSessionQr.fromJson(data as Map<String, dynamic>),

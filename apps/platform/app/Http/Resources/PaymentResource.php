@@ -32,6 +32,7 @@ class PaymentResource extends JsonResource
             'expires_at' => $this->expires_at->toIso8601String(),
             'confirmed_at' => $this->confirmed_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'alert_acknowledged_at' => $this->alert_acknowledged_at?->toIso8601String(),
         ];
     }
 }

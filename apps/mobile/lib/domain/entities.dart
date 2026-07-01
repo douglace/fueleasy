@@ -168,6 +168,7 @@ class Payment {
     required this.expiresAt,
     required this.confirmedAt,
     required this.createdAt,
+    this.alertAcknowledgedAt,
   });
 
   final int id;
@@ -183,6 +184,29 @@ class Payment {
   final DateTime? expiresAt;
   final DateTime? confirmedAt;
   final DateTime? createdAt;
+
+  /// Accusé de réception pompiste (non nul une fois acquitté). `null` tant
+  /// que le pompiste n'a pas confirmé avoir vu le paiement.
+  final DateTime? alertAcknowledgedAt;
+
+  bool get isAcknowledged => alertAcknowledgedAt != null;
+
+  Payment copyWith({DateTime? alertAcknowledgedAt}) => Payment(
+    id: id,
+    reference: reference,
+    shortCode: shortCode,
+    status: status,
+    via: via,
+    fuelType: fuelType,
+    amount: amount,
+    failureReason: failureReason,
+    stationOrganizationId: stationOrganizationId,
+    pumpId: pumpId,
+    expiresAt: expiresAt,
+    confirmedAt: confirmedAt,
+    createdAt: createdAt,
+    alertAcknowledgedAt: alertAcknowledgedAt ?? this.alertAcknowledgedAt,
+  );
 
   factory Payment.fromJson(Map<String, dynamic> j) => Payment(
     id: j['id'] as int,
@@ -200,6 +224,7 @@ class Payment {
     expiresAt: _parseDate(j['expires_at']),
     confirmedAt: _parseDate(j['confirmed_at']),
     createdAt: _parseDate(j['created_at']),
+    alertAcknowledgedAt: _parseDate(j['alert_acknowledged_at']),
   );
 }
 

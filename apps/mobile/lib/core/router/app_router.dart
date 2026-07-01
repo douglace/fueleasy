@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/attendant/screens/attendant_home_screen.dart';
+import '../../features/attendant/screens/attendant_shell_screen.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/screens/activation_screen.dart';
 import '../../features/auth/screens/device_change_screen.dart';
@@ -81,7 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: attendantHomePath,
-        builder: (context, state) => const AttendantHomeScreen(),
+        builder: (context, state) => const AttendantShellScreen(),
       ),
       GoRoute(
         path: unsupportedRolePath,
