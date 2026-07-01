@@ -1,8 +1,11 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fusy_mobile/core/format/money.dart';
 import 'package:fusy_mobile/main.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final nbsp = String.fromCharCode(0xA0);
 
   test(
@@ -16,8 +19,9 @@ void main() {
   );
 
   testWidgets('FusyApp builds and shows the foundations demo', (tester) async {
-    await tester.pumpWidget(const FusyApp());
+    FlutterSecureStorage.setMockInitialValues({});
+    await tester.pumpWidget(const ProviderScope(child: FusyApp()));
     expect(find.text('Fusy — Fondations'), findsOneWidget);
-    expect(find.text('Scanner une station'), findsOneWidget);
+    expect(find.text('Tester la connexion au backend'), findsOneWidget);
   });
 }
