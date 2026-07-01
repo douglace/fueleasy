@@ -11,6 +11,7 @@ abstract final class AppConfig {
     defaultValue: 'http://localhost:8000',
   );
 
-  /// Préfixe de l'API mobile versionnée.
-  static String get mobileApiUrl => '$apiBaseUrl/api/v1/mobile';
+  /// Préfixe de l'API mobile versionnée (slash final pour une jointure fiable
+  /// avec des chemins relatifs, ex. `auth/login`).
+  static String get mobileApiUrl => '$apiBaseUrl/api/v1/mobile/';
 }
