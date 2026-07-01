@@ -18,10 +18,14 @@ void main() {
     },
   );
 
-  testWidgets('FusyApp builds and shows the foundations demo', (tester) async {
+  testWidgets('FusyApp redirects an unauthenticated user to the login screen', (
+    tester,
+  ) async {
     FlutterSecureStorage.setMockInitialValues({});
     await tester.pumpWidget(const ProviderScope(child: FusyApp()));
-    expect(find.text('Fusy — Fondations'), findsOneWidget);
-    expect(find.text('Tester la connexion au backend'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connexion'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
   });
 }
