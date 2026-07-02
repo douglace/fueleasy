@@ -95,10 +95,14 @@ class _SessionCardState extends ConsumerState<SessionCard> {
             children: [
               Text(pumpLabel, style: AppTypography.title3),
               const SizedBox(height: AppSpacing.md),
-              QrImageView(
-                data: qr.qr,
-                size: 200,
-                backgroundColor: AppColors.white,
+              Semantics(
+                image: true,
+                label: 'QR code de la pompe à scanner par le chauffeur',
+                child: QrImageView(
+                  data: qr.qr,
+                  size: 200,
+                  backgroundColor: AppColors.white,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(

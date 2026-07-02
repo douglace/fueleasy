@@ -48,5 +48,52 @@ Toutes depuis `apps/mobile/` (avec le PATH Flutter exporté) :
 enums) · `lib/data` (repositories + DTO) · `lib/features` (auth, driver, attendant).
 Stack : **Riverpod** (état/DI) + **Dio** (HTTP) + **go_router** (navigation par rôle).
 
-Le plan de construction par phases est suivi hors dépôt. État actuel : **Phase 0 —
-fondations** (thème, tokens, composants de base, config, CI).
+## Comptes de test
+
+Les comptes mobiles (chauffeur/pompiste) sont créés côté back-office. Pour tester,
+générer un PIN temporaire via tinker dans le conteneur `apps/platform` :
+
+```bash
+docker compose exec app php artisan tinker --execute='
+  $u = App\Models\User::find(3); // chauffeur seedé (Boris Mballa)
+  echo app(App\Application\Identity\MobileAccountAdmin::class)->resetPin($u, null);'
+```
+
+Puis, dans l'app : **Activer mon compte** avec code entreprise `SCEFEA`, le téléphone du
+compte et ce PIN temporaire. Le scan QR nécessite un **appareil physique** (le simulateur
+iOS n'a pas de caméra) ; le token QR de la pompe seedée s'obtient aussi via tinker.
+
+## Localisation
+
+App **mono-locale française** (MVP). `flutter_localizations` + `Locale('fr')` fournissent
+les libellés Material et le formatage des dates. Une extraction i18n complète (ARB) est
+volontairement **différée** tant qu'aucune 2ᵉ langue n'est requise (YAGNI).
+
+## Icône & splash
+
+Générés via `flutter_launcher_icons` / `flutter_native_splash` depuis
+`assets/images/` (config dans `pubspec.yaml`) :
+
+```bash
+dart run flutter_launcher_icons
+dart run flutter_native_splash:create
+```
+
+> ⚠️ L'export `app-icon.png` a un extérieur noir à retravailler avant la production
+> (cf. `design-briefs/00-shared/assets-index.md`). Régénérer après avoir remplacé l'asset.
+
+## Builds release
+
+- **Android** (AAB) : `flutter build appbundle --dart-define=API_BASE_URL=...`.
+  Prérequis non installés sur cette machine : `cmdline-tools` du SDK Android
+  (`flutter doctor` le signale) + acceptation des licences.
+- **iOS** : `flutter build ipa --dart-define=API_BASE_URL=...` — nécessite une identité de
+  signature Apple configurée dans Xcode. Vérif de compilation sans signature :
+  `flutter build ios --simulator --dart-define=API_BASE_URL=...`.
+
+## État de construction
+
+Construite par phases (plan suivi hors dépôt). **Phases 0 à 6 livrées** :
+fondations/design system, couche données & contrat API, auth + aiguillage par rôle,
+parcours paiement chauffeur, historique & reçus, espace pompiste (session + consultation +
+accusé), finition (localisation FR, bandeau hors-ligne, icône/splash, accessibilité).
