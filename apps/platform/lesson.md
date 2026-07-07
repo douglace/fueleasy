@@ -1,5 +1,25 @@
 # Lessons — apps/platform
 
+## 2026-07-03 — `public/hot` résiduel casse le serve hôte ; lock npm désynchronisé casse le build Docker
+
+**Symptôme** : (1) `php artisan serve` hôte rend des pages blanches — tous les assets en `ERR_CONNECTION_REFUSED` alors que `public/build/` est frais. (2) `docker compose build` échoue sur `RUN npm ci` : « package.json and package-lock.json are not in sync — Missing: @emnapi/core… ».
+
+**Cause** : (1) un fichier `public/hot` résiduel (laissé par un `composer dev`/Vite tué) pointe vers `http://0.0.0.0:5173` ; Laravel sert alors les URLs Vite dev au lieu du manifest buildé. (2) le `npm i` de réparation des bindings natifs (leçon précédente) avait laissé `package-lock.json` incomplet (entrées `@emnapi/*` manquantes) : l'hôte tournait, mais `npm ci` — strict — refusait dans l'image.
+
+**Correction** : (1) `rm public/hot` (régénéré au prochain dev). (2) `npm install` pour resynchroniser le lock (+44 lignes `@emnapi`), puis rebuild.
+
+**Pour la prochaine fois** : pages blanches avec assets refusés sur un serve hôte ⇒ vérifier `cat public/hot` avant tout. Après tout `npm i` correctif, tester `docker compose build` (ou `npm ci`) : le lock peut être valide pour l'hôte mais refusé par `npm ci`. Les changements front/PHP ne sont visibles sur localhost:8000 qu'après `docker compose build app queue && docker compose up -d app queue` (pas de volume code monté).
+
+## 2026-07-03 — Outillage hôte désynchronisé : bindings npm Linux, vendor incomplet, phpunit.xml d'une autre machine
+
+**Symptôme** : `composer ci:check` échoue en cascade sur une machine qui n'a pas servi au dernier dev : (1) ESLint plante avec « Cannot find native binding » (`unrs-resolver`), (2) PHPStan ne trouve pas `Dompdf\Dompdf` alors que le paquet est dans `composer.lock`, (3) les tests échouent en « connection refused » sur 127.0.0.1:5432.
+
+**Cause** : `node_modules/` et `vendor/` avaient été installés depuis un conteneur Docker Linux (volume partagé) — seuls les bindings natifs **linux-arm64** étaient présents, et `vendor/` était incomplet par rapport au lock. `phpunit.xml` pointait vers un Postgres local d'une autre machine (user `computer-care`, port 5432) alors que le `docker-compose.yml` du projet expose Postgres sur l'hôte au port **5433** (user `fusy`/`secret`). La CI GitHub n'avait par ailleurs **aucun service Postgres** — `php artisan test` n'y a jamais pu passer.
+
+**Correction** : `npm i` + `composer install` sur l'hôte (le conteneur build sa propre image, `.dockerignore` exclut `node_modules`/`vendor`/`.env` — aucune interférence). `phpunit.xml` aligné sur le compose du projet (127.0.0.1:5433, `fusy`/`secret`, base `fusy_testing` à créer via `docker exec platform-db-1 createdb -U fusy fusy_testing`). Service `postgres:16-alpine` ajouté à `.github/workflows/tests.yml` avec les mêmes credentials. `.env` local pointé sur 127.0.0.1:5433 pour les commandes artisan hôte.
+
+**Pour la prochaine fois** : sur ce repo, tooling hôte et runtime conteneur sont indépendants ; si un binaire natif « n'existe pas », vérifier `ls node_modules/@unrs` (plateforme du binding) avant de soupçonner le code. La base de test vit dans le conteneur `platform-db-1`, port hôte 5433.
+
 ## 2026-06-25 — React Compiler interdit `useMemo` manuel et `setState` dans un effet
 
 **Symptôme** : `npm run lint` échoue (errors, pas warnings) sur du code React pourtant valide : `react-hooks/preserve-manual-memoization` ("Existing memoization could not be preserved") sur un `useMemo`, et `react-hooks/set-state-in-effect` ("Avoid calling setState() directly within an effect") sur un `setState` appelé dans le corps d'un `useEffect`.

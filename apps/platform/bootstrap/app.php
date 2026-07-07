@@ -53,7 +53,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (MobileAuthException $e, Request $request) {
             if ($request->is('api/*')) {
-                return response()->json(['message' => $e->getMessage()], 422);
+                return response()->json(array_filter([
+                    'message' => $e->getMessage(),
+                    'reason' => $e->reason,
+                ], fn ($value) => $value !== null), 422);
             }
 
             return null;

@@ -1,6 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import { ConnectionCode } from '@/components/connection-code';
 import {
     Badge,
     BudgetBar,
@@ -90,6 +91,7 @@ export default function EnterpriseDrivers({ drivers }: { drivers: Driver[] }) {
             />
 
             <div className="stack">
+                <ConnectionCode subject="chauffeur" />
                 <section className="card">
                     <div className="card-h">
                         <span className="grid size-[30px] place-items-center rounded-lg bg-[var(--navy-soft)] text-[var(--navy)]">

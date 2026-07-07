@@ -27,16 +27,19 @@ final class MobileLogin
     {
         $user = $this->resolver->resolve($organizationCode, $identifier);
 
-        if ($user->pin_is_temporary) {
-            throw MobileAuthException::invalidCredentials();
-        }
-
+        // Le PIN est vérifié AVANT le test d'activation : un compte non activé
+        // n'est révélé (account_not_activated) qu'à qui connaît le PIN
+        // temporaire, et les tentatives ratées alimentent le lockout.
         match ($this->pinVerifier->verify($user, $pin)) {
             PinVerificationResult::Ok => null,
             PinVerificationResult::Locked => throw MobileAuthException::pinLocked(),
             PinVerificationResult::RequiresAdminReset => throw MobileAuthException::requiresAdminReset(),
             PinVerificationResult::Invalid => throw MobileAuthException::invalidCredentials(),
         };
+
+        if ($user->pin_is_temporary) {
+            throw MobileAuthException::accountNotActivated();
+        }
 
         if ($user->device_id !== null && $user->device_id !== $deviceId) {
             throw MobileAuthException::deviceMismatch();

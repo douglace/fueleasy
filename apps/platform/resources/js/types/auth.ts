@@ -10,8 +10,15 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type Organization = {
+    name: string;
+    code: string;
+    type: string;
+};
+
 export type Auth = {
     user: User;
+    organization: Organization | null;
 };
 
 /* @chisel-passkeys */

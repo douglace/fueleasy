@@ -40,6 +40,15 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'organization' => function () use ($request): ?array {
+                    $org = $request->user()?->organization;
+
+                    return $org === null ? null : [
+                        'name' => $org->name,
+                        'code' => $org->code,
+                        'type' => $org->type->value,
+                    ];
+                },
             ],
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),

@@ -1,5 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { ConnectionCode } from '@/components/connection-code';
 import {
     Badge,
     Btn,
@@ -49,6 +50,7 @@ export default function StationPompistes({
             />
 
             <div className="stack">
+                <ConnectionCode subject="pompiste" />
                 <div className="cols-3 grid">
                     <form className="card span-2" onSubmit={submit}>
                         <div className="card-h">

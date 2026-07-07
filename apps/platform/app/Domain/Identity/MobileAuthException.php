@@ -8,9 +8,27 @@ use App\Domain\Shared\DomainException;
 
 final class MobileAuthException extends DomainException
 {
+    public function __construct(string $message, public readonly ?string $reason = null)
+    {
+        parent::__construct($message);
+    }
+
     public static function invalidCredentials(): self
     {
         return new self('Identifiants invalides.');
+    }
+
+    /**
+     * Compte à PIN temporaire jamais activé. N'est levée qu'APRÈS vérification
+     * du PIN temporaire fourni : sans le bon PIN, l'appelant reçoit le même
+     * invalidCredentials() qu'un compte inexistant (pas de fuite d'état).
+     */
+    public static function accountNotActivated(): self
+    {
+        return new self(
+            'Compte non activé. Utilisez « Activer mon compte » avec votre PIN temporaire.',
+            'account_not_activated',
+        );
     }
 
     public static function pinLocked(): self

@@ -32,6 +32,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon $expires_at
  * @property Carbon|null $confirmed_at
  * @property int|null $ledger_entry_id
+ * @property int|null $settled_batch_id
+ * @property Carbon|null $alert_acknowledged_at
+ * @property Carbon|null $alert_sms_sent_at
  * @property-read Organization $enterprise
  * @property-read User $driver
  */

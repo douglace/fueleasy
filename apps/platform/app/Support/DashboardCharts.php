@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Domain\Stations\FuelType;
+use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
@@ -19,7 +20,7 @@ class DashboardCharts
     /**
      * Volume des paiements (somme des montants) sur les 7 derniers jours.
      *
-     * @param  Builder<\App\Models\Payment>  $paid  requête de paiements déjà filtrée (statut payé + périmètre)
+     * @param  Builder<Payment>  $paid  requête de paiements déjà filtrée (statut payé + périmètre)
      * @return list<array{l: string, v: int}>
      */
     public static function volume(Builder $paid, string $dateColumn = 'created_at'): array
@@ -48,16 +49,14 @@ class DashboardCharts
     /**
      * Répartition du volume par type de carburant.
      *
-     * @param  Builder<\App\Models\Payment>  $paid
+     * @param  Builder<Payment>  $paid
      * @return list<array{name: string, value: int, fuel: string}>
      */
     public static function fuelMix(Builder $paid): array
     {
         $sum = [];
         foreach ((clone $paid)->get(['fuel_type', 'amount']) as $row) {
-            $fuel = $row->fuel_type instanceof FuelType
-                ? $row->fuel_type->value
-                : (string) $row->fuel_type;
+            $fuel = $row->fuel_type->value;
             $sum[$fuel] = ($sum[$fuel] ?? 0) + (int) $row->amount;
         }
 

@@ -116,6 +116,52 @@ class MobileAuthTest extends TestCase
         $this->assertNotNull(SmsCode::query()->latest('id')->first()->consumed_at);
     }
 
+    public function test_login_with_correct_temporary_pin_returns_account_not_activated_reason(): void
+    {
+        $org = Organization::factory()->enterprise()->create();
+        $this->driverWithTempPin($org);
+
+        $this->postJson('/api/v1/mobile/auth/login', [
+            'organization_code' => $org->code,
+            'identifier' => 'MAT-001',
+            'pin' => '0000',
+            'device_id' => 'device-A',
+        ])->assertStatus(422)->assertJson(['reason' => 'account_not_activated']);
+    }
+
+    public function test_login_with_wrong_pin_on_unactivated_account_stays_generic(): void
+    {
+        $org = Organization::factory()->enterprise()->create();
+        $this->driverWithTempPin($org);
+
+        // Sans le PIN temporaire, aucune fuite d'état : erreur générique, pas de reason.
+        $this->postJson('/api/v1/mobile/auth/login', [
+            'organization_code' => $org->code,
+            'identifier' => 'MAT-001',
+            'pin' => '9999',
+            'device_id' => 'device-A',
+        ])->assertStatus(422)
+            ->assertJson(['message' => 'Identifiants invalides.'])
+            ->assertJsonMissingPath('reason');
+    }
+
+    public function test_failed_logins_on_unactivated_account_feed_the_lockout(): void
+    {
+        $org = Organization::factory()->enterprise()->create();
+        $driver = $this->driverWithTempPin($org);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/v1/mobile/auth/login', [
+                'organization_code' => $org->code, 'identifier' => 'MAT-001',
+                'pin' => '9999', 'device_id' => 'device-A',
+            ])->assertStatus(422);
+        }
+
+        $driver->refresh();
+        $this->assertNotNull($driver->pin_locked_until);
+        $this->assertTrue($driver->isPinLocked());
+    }
+
     public function test_pin_lockout_after_five_failed_attempts(): void
     {
         $org = Organization::factory()->enterprise()->create();
