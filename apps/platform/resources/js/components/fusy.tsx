@@ -47,6 +47,7 @@ import type {
     SelectHTMLAttributes,
     TextareaHTMLAttributes,
 } from 'react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 /* ---------------------------------------------------------------------------
@@ -383,6 +384,29 @@ export const FUEL: Record<string, string> = {
     super: 'Super sans plomb',
     petrole: 'Pétrole lampant',
 };
+
+/* ---------------------------------------------------------------------------
+   Code court copiable (code paiement, code pompe…)
+   ------------------------------------------------------------------------- */
+export function CopyCode({ code }: { code: string | null }) {
+    if (!code) {
+        return <span className="muted">—</span>;
+    }
+
+    return (
+        <span
+            className="mono copyable font-bold"
+            onClick={() => {
+                navigator.clipboard?.writeText(code);
+                toast.success(`Copié : ${code}`);
+            }}
+            title="Copier le code"
+        >
+            {code}
+            <Icon name="copy" size={13} />
+        </span>
+    );
+}
 
 /* ---------------------------------------------------------------------------
    Tableau

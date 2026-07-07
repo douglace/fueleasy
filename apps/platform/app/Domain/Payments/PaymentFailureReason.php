@@ -9,6 +9,7 @@ enum PaymentFailureReason: string
     case QrInvalid = 'qr_invalid';
     case QrExpired = 'qr_expired';
     case QrRevoked = 'qr_revoked';
+    case PumpCodeUnknown = 'pump_code_unknown';
     case OrganizationInactive = 'organization_inactive';
     case DriverInactive = 'driver_inactive';
     case StationInactive = 'station_inactive';
@@ -29,6 +30,7 @@ enum PaymentFailureReason: string
             self::QrInvalid => 'QR invalide.',
             self::QrExpired => 'QR expiré.',
             self::QrRevoked => 'QR fixe désactivé.',
+            self::PumpCodeUnknown => 'Code pompe inconnu.',
             self::OrganizationInactive => 'Entreprise inactive.',
             self::DriverInactive => 'Chauffeur inactif.',
             self::StationInactive => 'Station inactive.',

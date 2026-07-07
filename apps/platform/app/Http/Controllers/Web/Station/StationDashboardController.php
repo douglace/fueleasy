@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Web\Station;
 use App\Application\Identity\MobileAccountAdmin;
 use App\Application\Operations\RefundService;
 use App\Application\Operations\SettlementService;
+use App\Application\Stations\PumpCodeGenerator;
 use App\Domain\Identity\Role;
 use App\Domain\Identity\UserStatus;
 use App\Domain\Payments\PaymentStatus;
@@ -63,6 +64,7 @@ class StationDashboardController extends Controller
                 ->map(fn (Pump $p): array => [
                     'id' => $p->id,
                     'label' => $p->label,
+                    'code' => $p->code,
                     'status' => $p->status->value,
                     'fixed_qr_active' => $p->fixed_qr_active,
                     'available_fuels' => $p->available_fuels ?? [],
@@ -128,7 +130,7 @@ class StationDashboardController extends Controller
         ]);
     }
 
-    public function storePump(Request $request): RedirectResponse
+    public function storePump(Request $request, PumpCodeGenerator $codes): RedirectResponse
     {
         $org = (int) $request->user()?->organization_id;
         $data = $request->validate([
@@ -140,6 +142,7 @@ class StationDashboardController extends Controller
         Pump::query()->create([
             'organization_id' => $org,
             'label' => $data['label'],
+            'code' => $codes->generate()->value,
             'status' => PumpStatus::Active,
             'fixed_qr_token' => Str::random(40),
             'fixed_qr_active' => true,

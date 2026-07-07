@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $organization_id
  * @property string $label
+ * @property string $code
  * @property PumpStatus $status
  * @property string|null $fixed_qr_token
  * @property bool $fixed_qr_active
@@ -27,7 +28,7 @@ class Pump extends Model
     use HasFactory;
 
     protected $fillable = [
-        'organization_id', 'label', 'status',
+        'organization_id', 'label', 'code', 'status',
         'fixed_qr_token', 'fixed_qr_active', 'available_fuels',
     ];
 

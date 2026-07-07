@@ -1,13 +1,12 @@
 import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import {
     Badge,
     Btn,
     Chip,
+    CopyCode,
     Field,
     FUEL,
-    Icon,
     num,
     Page,
     PageHead,
@@ -48,26 +47,6 @@ const timeOf = (s: string | null) =>
               minute: '2-digit',
           })
         : '—';
-
-function CopyCode({ code }: { code: string | null }) {
-    if (!code) {
-        return <span className="muted">—</span>;
-    }
-
-    return (
-        <span
-            className="mono copyable font-bold"
-            onClick={() => {
-                navigator.clipboard?.writeText(code);
-                toast.success(`Copié : ${code}`);
-            }}
-            title="Copier le code"
-        >
-            {code}
-            <Icon name="copy" size={13} />
-        </span>
-    );
-}
 
 export default function StationPayments({
     payments,

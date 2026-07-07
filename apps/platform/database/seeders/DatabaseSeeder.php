@@ -12,6 +12,7 @@ use App\Domain\Organizations\OrganizationCode;
 use App\Domain\Organizations\OrganizationType;
 use App\Domain\Shared\Money;
 use App\Domain\Stations\FuelType;
+use App\Domain\Stations\PumpCode;
 use App\Models\AuthorizedStation;
 use App\Models\FuelAccount;
 use App\Models\Organization;
@@ -78,6 +79,7 @@ class DatabaseSeeder extends Seeder
         Pump::query()->create([
             'organization_id' => $station->id,
             'label' => 'Pompe 1',
+            'code' => PumpCode::random()->value,
             'fixed_qr_token' => Str::random(40),
             'fixed_qr_active' => true,
             'available_fuels' => [FuelType::Gasoil->value, FuelType::Super->value],

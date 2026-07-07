@@ -26,7 +26,7 @@ Route::prefix('v1/mobile')->group(function (): void {
         Route::post('budget/reveal', [MeController::class, 'revealBudget']);
 
         // Chauffeur — paiement.
-        Route::post('scan', [PaymentController::class, 'scan']);
+        Route::post('scan', [PaymentController::class, 'scan'])->middleware('throttle:30,1');
         Route::get('payments', [PaymentController::class, 'history']);
         Route::post('payments', [PaymentController::class, 'store']);
         Route::get('payments/by-key', [PaymentController::class, 'byIdempotencyKey']);

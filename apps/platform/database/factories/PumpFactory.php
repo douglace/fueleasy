@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Domain\Stations\FuelType;
+use App\Domain\Stations\PumpCode;
 use App\Domain\Stations\PumpStatus;
 use App\Models\Organization;
 use App\Models\Pump;
@@ -24,6 +25,7 @@ class PumpFactory extends Factory
         return [
             'organization_id' => Organization::factory()->station(),
             'label' => 'Pompe '.fake()->unique()->numberBetween(1, 99),
+            'code' => PumpCode::random()->value,
             'status' => PumpStatus::Active,
             'fixed_qr_token' => Str::random(40),
             'fixed_qr_active' => true,

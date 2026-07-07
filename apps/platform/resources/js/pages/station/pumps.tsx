@@ -4,6 +4,7 @@ import {
     Badge,
     Btn,
     Chip,
+    CopyCode,
     Field,
     FUEL,
     Icon,
@@ -18,6 +19,7 @@ import { ConfirmButton } from '@/components/overlays';
 interface Pump {
     id: number;
     label: string;
+    code: string;
     status: string;
     fixed_qr_active: boolean;
     available_fuels: string[];
@@ -59,7 +61,7 @@ export default function StationPumps({ pumps, fuels }: Props) {
         <Page title="Pompes">
             <PageHead
                 title="Pompes"
-                sub="Configurez vos pompes, les carburants disponibles et le QR fixe de paiement Fusy."
+                sub="Configurez vos pompes, les carburants disponibles et le QR fixe de paiement Fusy. Affichez le code pompe à côté du QR : il sert de secours si le scan est impossible."
             />
 
             <div className="stack">
@@ -160,12 +162,22 @@ export default function StationPumps({ pumps, fuels }: Props) {
                         </span>
                     </div>
                     <Table
-                        head={['Pompe', 'Carburants', 'État', 'QR fixe', '']}
+                        head={[
+                            'Pompe',
+                            'Code pompe',
+                            'Carburants',
+                            'État',
+                            'QR fixe',
+                            '',
+                        ]}
                         empty="Aucune pompe."
                     >
                         {pumps.map((p) => (
                             <tr key={p.id}>
                                 <td className="strong">{p.label}</td>
+                                <td>
+                                    <CopyCode code={p.code} />
+                                </td>
                                 <td>
                                     {p.available_fuels.length ? (
                                         <div

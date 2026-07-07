@@ -7,7 +7,9 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Application\Operations\ReceiptRenderer;
 use App\Application\Payments\CapturePayment;
 use App\Application\Payments\CreatePaymentSession;
+use App\Application\Payments\ResolvePumpCode;
 use App\Application\Payments\ResolveScan;
+use App\Application\Payments\ScanContext;
 use App\Domain\Identity\Role;
 use App\Domain\Shared\Money;
 use App\Domain\Stations\FuelType;
@@ -22,14 +24,18 @@ use Symfony\Component\HttpFoundation\Response;
 class PaymentController extends Controller
 {
     /**
-     * Résout un QR scanné en contexte (station, pompe, pompiste éventuel).
+     * Résout un QR scanné — ou un code pompe saisi manuellement en
+     * secours — en contexte (station, pompe, pompiste éventuel).
      */
-    public function scan(Request $request, ResolveScan $resolveScan): JsonResponse
+    public function scan(Request $request, ResolveScan $resolveScan, ResolvePumpCode $resolvePumpCode): JsonResponse
     {
         $this->assertDriver($request);
 
-        $data = $request->validate(['qr' => ['required', 'string']]);
-        $context = $resolveScan->handle($data['qr']);
+        $data = $request->validate([
+            'qr' => ['required_without:code', 'prohibits:code', 'string'],
+            'code' => ['required_without:qr', 'string', 'max:12'],
+        ]);
+        $context = $this->resolveContext($data, $resolveScan, $resolvePumpCode);
 
         return response()->json([
             'via' => $context->via->value,
@@ -49,17 +55,18 @@ class PaymentController extends Controller
     /**
      * Crée une session de paiement (pending) après scan.
      */
-    public function store(Request $request, ResolveScan $resolveScan, CreatePaymentSession $create): JsonResponse
+    public function store(Request $request, ResolveScan $resolveScan, ResolvePumpCode $resolvePumpCode, CreatePaymentSession $create): JsonResponse
     {
         $driver = $this->assertDriver($request);
 
         $data = $request->validate([
-            'qr' => ['required', 'string'],
+            'qr' => ['required_without:code', 'prohibits:code', 'string'],
+            'code' => ['required_without:qr', 'string', 'max:12'],
             'fuel_type' => ['required', 'string', 'in:'.implode(',', array_column(FuelType::cases(), 'value'))],
             'amount' => ['required', 'integer', 'min:1'],
         ]);
 
-        $context = $resolveScan->handle($data['qr']);
+        $context = $this->resolveContext($data, $resolveScan, $resolvePumpCode);
         $payment = $create->handle($driver, $context, FuelType::from($data['fuel_type']), Money::fromInt($data['amount']));
 
         return (new PaymentResource($payment))->response()->setStatusCode(201);
@@ -137,6 +144,18 @@ class PaymentController extends Controller
             ->get();
 
         return response()->json(['data' => PaymentResource::collection($payments)]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveContext(array $data, ResolveScan $resolveScan, ResolvePumpCode $resolvePumpCode): ScanContext
+    {
+        if (isset($data['code'])) {
+            return $resolvePumpCode->handle((string) $data['code']);
+        }
+
+        return $resolveScan->handle((string) $data['qr']);
     }
 
     private function assertDriver(Request $request): User
