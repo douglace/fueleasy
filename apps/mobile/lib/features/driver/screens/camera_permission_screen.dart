@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/empty_state.dart';
+import 'pump_code_entry_screen.dart';
 import 'scanner_screen.dart';
 
 /// Pré-permission caméra : explique l'usage avant de déclencher la demande
@@ -39,6 +40,12 @@ class _CameraPermissionScreenState extends State<CameraPermissionScreen> {
     Navigator.of(
       context,
     ).pushReplacement(MaterialPageRoute(builder: (_) => const ScannerScreen()));
+  }
+
+  void _goToCodeEntry() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const PumpCodeEntryScreen()),
+    );
   }
 
   Future<void> _requestPermission() async {
@@ -89,6 +96,15 @@ class _CameraPermissionScreenState extends State<CameraPermissionScreen> {
                   onPressed: _requestPermission,
                 ),
               ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenMargin,
+              ),
+              child: SecondaryButton(
+                label: 'Saisir le code de la pompe',
+                onPressed: _goToCodeEntry,
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: TextButton(

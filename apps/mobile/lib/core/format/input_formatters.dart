@@ -18,3 +18,7 @@ final organizationCodeFormatters = <TextInputFormatter>[
   UpperCaseTextFormatter(),
   LengthLimitingTextInputFormatter(6),
 ];
+
+/// Formatteurs du code pompe (secours quand le scan QR est impossible) :
+/// mêmes règles que le code organisation (voir PumpCode côté backend).
+final pumpCodeFormatters = organizationCodeFormatters;

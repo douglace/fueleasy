@@ -39,6 +39,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
           .read(paymentRepositoryProvider)
           .create(
             qr: draft.qr,
+            code: draft.code,
             fuelType: draft.fuelType!,
             amount: draft.amount!,
           );

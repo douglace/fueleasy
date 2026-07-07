@@ -17,24 +17,44 @@ class PaymentRepository {
     (data) => ScanContext.fromJson(data as Map<String, dynamic>),
   );
 
+  /// Secours quand le scan QR est impossible : résout le code court affiché
+  /// sur la pompe (même réponse que [scan]).
+  Future<ScanContext> scanByCode(String code) => runApi(
+    () => _dio.post('scan', data: {'code': code}),
+    (data) => ScanContext.fromJson(data as Map<String, dynamic>),
+  );
+
   // create/get/confirm renvoient une PaymentResource via ->response(), donc
   // enveloppée par Laravel dans {"data": {...}} — contrairement aux autres
   // endpoints qui embarquent la resource dans un tableau construit à la main
   // (celui-là n'est pas enveloppé une seconde fois). Vérifié en direct contre
   // le backend, pas seulement déduit du code source.
   Future<Payment> create({
-    required String qr,
+    String? qr,
+    String? code,
     required FuelType fuelType,
     required int amount,
-  }) => runApi(
-    () => _dio.post(
-      'payments',
-      data: {'qr': qr, 'fuel_type': fuelType.value, 'amount': amount},
-    ),
-    (data) => Payment.fromJson(
-      (data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
-    ),
-  );
+  }) {
+    assert(
+      (qr == null) != (code == null),
+      'create attend soit un QR, soit un code pompe.',
+    );
+
+    return runApi(
+      () => _dio.post(
+        'payments',
+        data: {
+          'qr': ?qr,
+          'code': ?code,
+          'fuel_type': fuelType.value,
+          'amount': amount,
+        },
+      ),
+      (data) => Payment.fromJson(
+        (data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+      ),
+    );
+  }
 
   Future<Payment> get(int paymentId) => runApi(
     () => _dio.get('payments/$paymentId'),

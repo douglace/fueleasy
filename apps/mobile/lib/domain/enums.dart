@@ -92,6 +92,7 @@ enum WorkSessionStatus {
 enum QrType {
   dynamicQr('dynamic'),
   fixed('fixed'),
+  code('code'),
   unknown('unknown');
 
   const QrType(this.value);
@@ -108,6 +109,7 @@ enum PaymentFailureReason {
   qrInvalid('qr_invalid'),
   qrExpired('qr_expired'),
   qrRevoked('qr_revoked'),
+  pumpCodeUnknown('pump_code_unknown'),
   organizationInactive('organization_inactive'),
   driverInactive('driver_inactive'),
   stationInactive('station_inactive'),

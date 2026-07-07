@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../models/payment_draft.dart';
 import 'amount_entry_screen.dart';
+import 'pump_code_entry_screen.dart';
 
 /// Vue caméra + cadre de scan. Résout le QR via `POST /scan` dès qu'un code
 /// est lu ; un seul appel à la fois (`_processing`) pour éviter les doublons.
@@ -64,6 +65,12 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     }
   }
 
+  void _goToCodeEntry() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const PumpCodeEntryScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,12 +108,16 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.screenMargin),
-              child: _errorMessage != null
-                  ? _ErrorBanner(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_errorMessage != null)
+                    _ErrorBanner(
                       message: _errorMessage!,
                       onRetry: () => setState(() => _errorMessage = null),
                     )
-                  : Text(
+                  else
+                    Text(
                       _processing
                           ? 'Vérification…'
                           : 'Placez le QR de la station dans le cadre',
@@ -115,6 +126,20 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                  const SizedBox(height: AppSpacing.xs),
+                  TextButton(
+                    onPressed: _goToCodeEntry,
+                    child: Text(
+                      'Saisir le code de la pompe',
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: Colors.white,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
