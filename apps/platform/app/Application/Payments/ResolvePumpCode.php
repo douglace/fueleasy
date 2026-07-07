@@ -35,6 +35,10 @@ final class ResolvePumpCode
             throw new PaymentException(PaymentFailureReason::PumpCodeUnknown);
         }
 
+        if (! $pump->isActive()) {
+            throw new PaymentException(PaymentFailureReason::PumpInactive);
+        }
+
         return new ScanContext(
             via: QrType::Code,
             station: Organization::query()->findOrFail($pump->organization_id),
