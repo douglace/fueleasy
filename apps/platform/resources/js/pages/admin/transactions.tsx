@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     Badge,
     Chip,
@@ -8,6 +9,7 @@ import {
     PageHead,
     SearchMini,
     Seg,
+    Select,
     Table,
 } from '@/components/fusy';
 
@@ -23,6 +25,18 @@ interface PaymentRow {
     created_at: string | null;
 }
 
+interface OrgRef {
+    id: number;
+    name: string;
+}
+
+interface Filters {
+    status: string | null;
+    enterprise_id: number | null;
+    station_id: number | null;
+    q: string | null;
+}
+
 type StatusFilter =
     | 'all'
     | 'paid'
@@ -33,29 +47,29 @@ type StatusFilter =
 
 export default function AdminTransactions({
     payments,
+    filters,
+    enterprises,
+    stations,
 }: {
     payments: PaymentRow[];
+    filters: Filters;
+    enterprises: OrgRef[];
+    stations: OrgRef[];
 }) {
-    const [filter, setFilter] = useState<StatusFilter>('all');
-    const [q, setQ] = useState('');
+    const [q, setQ] = useState(filters.q ?? '');
 
-    const rows = useMemo(() => {
-        const needle = q.trim().toLowerCase();
-
-        return payments.filter((p) => {
-            if (filter !== 'all' && p.status !== filter) {
-                return false;
-            }
-
-            if (!needle) {
-                return true;
-            }
-
-            return `${p.reference} ${p.short_code} ${p.enterprise} ${p.station}`
-                .toLowerCase()
-                .includes(needle);
-        });
-    }, [payments, filter, q]);
+    // Filtres appliqués côté serveur (sur toute la base, pas seulement les
+    // 200 lignes affichées) : chaque changement recharge la page Inertia.
+    const apply = (next: Partial<Filters>) => {
+        const merged = { ...filters, q: q.trim() || null, ...next };
+        router.get(
+            '/admin/transactions',
+            Object.fromEntries(
+                Object.entries(merged).filter(([, v]) => v != null && v !== ''),
+            ),
+            { preserveState: true, preserveScroll: true },
+        );
+    };
 
     return (
         <Page title="Transactions">
@@ -70,8 +84,12 @@ export default function AdminTransactions({
                         <h3>Paiements</h3>
                         <div className="actions">
                             <Seg
-                                value={filter}
-                                onChange={setFilter}
+                                value={
+                                    (filters.status ?? 'all') as StatusFilter
+                                }
+                                onChange={(v) =>
+                                    apply({ status: v === 'all' ? null : v })
+                                }
                                 options={[
                                     { value: 'all', label: 'Tous' },
                                     { value: 'paid', label: 'Payés' },
@@ -81,13 +99,54 @@ export default function AdminTransactions({
                                     { value: 'expired', label: 'Expirés' },
                                 ]}
                             />
-                            <SearchMini
-                                value={q}
-                                onChange={setQ}
-                                placeholder="Référence, code, entreprise…"
-                            />
+                            <Select
+                                value={filters.enterprise_id ?? ''}
+                                onChange={(e) =>
+                                    apply({
+                                        enterprise_id: e.target.value
+                                            ? Number(e.target.value)
+                                            : null,
+                                    })
+                                }
+                            >
+                                <option value="">Toutes les entreprises</option>
+                                {enterprises.map((o) => (
+                                    <option key={o.id} value={o.id}>
+                                        {o.name}
+                                    </option>
+                                ))}
+                            </Select>
+                            <Select
+                                value={filters.station_id ?? ''}
+                                onChange={(e) =>
+                                    apply({
+                                        station_id: e.target.value
+                                            ? Number(e.target.value)
+                                            : null,
+                                    })
+                                }
+                            >
+                                <option value="">Toutes les stations</option>
+                                {stations.map((o) => (
+                                    <option key={o.id} value={o.id}>
+                                        {o.name}
+                                    </option>
+                                ))}
+                            </Select>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    apply({});
+                                }}
+                            >
+                                <SearchMini
+                                    value={q}
+                                    onChange={setQ}
+                                    placeholder="Référence, code court…"
+                                />
+                            </form>
                             <Chip>
-                                <b>{rows.length}</b>&nbsp;résultats
+                                <b>{payments.length}</b>&nbsp;résultats
                             </Chip>
                         </div>
                     </div>
@@ -104,7 +163,7 @@ export default function AdminTransactions({
                         ]}
                         empty="Aucune transaction ne correspond à ce filtre."
                     >
-                        {rows.map((p) => (
+                        {payments.map((p) => (
                             <tr key={p.id}>
                                 <td className="ref">{p.reference}</td>
                                 <td>

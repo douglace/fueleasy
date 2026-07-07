@@ -18,10 +18,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::get('organizations', [AdminDashboardController::class, 'organizations'])->name('organizations');
         Route::get('transactions', [AdminDashboardController::class, 'transactions'])->name('transactions');
         Route::get('audit', [AdminDashboardController::class, 'audit'])->name('audit');
+        Route::get('stations/{organization}', [AdminDashboardController::class, 'stationDetail'])->name('stations.detail');
         Route::get('refunds', [AdminOperationsController::class, 'refunds'])->name('refunds');
         Route::get('settlements', [AdminOperationsController::class, 'settlements'])->name('settlements');
 
         Route::post('organizations', [AdminDashboardController::class, 'storeOrganization'])->name('organizations.store');
+        Route::post('organizations/{organization}/toggle-status', [AdminDashboardController::class, 'toggleOrganizationStatus'])->name('organizations.toggle-status');
         Route::post('fuel-credits', [AdminDashboardController::class, 'creditAccount'])->name('fuel-credits.store');
         Route::post('authorized-stations', [AdminDashboardController::class, 'authorizeStation'])->name('authorized-stations.store');
         Route::post('refunds/{refund}/approve', [AdminOperationsController::class, 'approveRefund'])->name('refunds.approve');

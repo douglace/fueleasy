@@ -6,6 +6,9 @@ namespace App\Http\Controllers\Web\Admin;
 
 use App\Application\FuelAccounts\CreditFuelAccount;
 use App\Application\Organizations\OnboardOrganization;
+use App\Application\Organizations\SetOrganizationStatus;
+use App\Domain\Identity\Role;
+use App\Domain\Organizations\OrganizationStatus;
 use App\Domain\Organizations\OrganizationType;
 use App\Domain\Payments\PaymentStatus;
 use App\Domain\Shared\Money;
@@ -15,12 +18,16 @@ use App\Models\AuthorizedStation;
 use App\Models\FuelAccount;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\Pump;
 use App\Models\RefundRequest;
+use App\Models\User;
 use App\Support\DashboardCharts;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class AdminDashboardController extends Controller
 {
@@ -77,13 +84,86 @@ class AdminDashboardController extends Controller
         ]);
     }
 
-    public function transactions(): Response
+    public function transactions(Request $request): Response
     {
+        $filters = $request->validate([
+            'status' => ['sometimes', 'nullable', 'in:'.implode(',', array_column(PaymentStatus::cases(), 'value'))],
+            'enterprise_id' => ['sometimes', 'nullable', 'integer'],
+            'station_id' => ['sometimes', 'nullable', 'integer'],
+            'q' => ['sometimes', 'nullable', 'string', 'max:64'],
+        ]);
+
+        $q = trim((string) ($filters['q'] ?? ''));
+
         return Inertia::render('admin/transactions', [
             'payments' => Payment::query()
                 ->with(['station:id,name', 'enterprise:id,name'])
+                ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
+                ->when($filters['enterprise_id'] ?? null, fn (Builder $query, int $id) => $query->where('organization_id', $id))
+                ->when($filters['station_id'] ?? null, fn (Builder $query, int $id) => $query->where('station_organization_id', $id))
+                ->when($q !== '', fn (Builder $query) => $query->where(
+                    fn (Builder $w) => $w->where('reference', 'ilike', "%{$q}%")->orWhere('short_code', strtoupper($q))
+                ))
                 ->orderByDesc('id')->limit(200)->get()->map($this->mapPayment(...)),
+            'filters' => [
+                'status' => $filters['status'] ?? null,
+                'enterprise_id' => $filters['enterprise_id'] ?? null,
+                'station_id' => $filters['station_id'] ?? null,
+                'q' => $q !== '' ? $q : null,
+            ],
+            'enterprises' => Organization::query()->where('type', OrganizationType::Enterprise)
+                ->orderBy('name')->get(['id', 'name']),
+            'stations' => Organization::query()->where('type', OrganizationType::Station)
+                ->orderBy('name')->get(['id', 'name']),
         ]);
+    }
+
+    /**
+     * Vue lecture seule des pompes et pompistes d'une station.
+     */
+    public function stationDetail(Organization $organization): Response
+    {
+        abort_unless($organization->type === OrganizationType::Station, SymfonyResponse::HTTP_NOT_FOUND);
+
+        return Inertia::render('admin/station-detail', [
+            'station' => [
+                'id' => $organization->id,
+                'name' => $organization->name,
+                'code' => $organization->code,
+                'status' => $organization->status->value,
+            ],
+            'pumps' => Pump::query()->where('organization_id', $organization->id)->orderBy('id')->get()
+                ->map(fn (Pump $p): array => [
+                    'id' => $p->id,
+                    'label' => $p->label,
+                    'code' => $p->code,
+                    'status' => $p->status->value,
+                    'fixed_qr_active' => $p->fixed_qr_active,
+                    'available_fuels' => $p->available_fuels ?? [],
+                ]),
+            'pompistes' => User::query()->where('organization_id', $organization->id)->where('role', Role::Pompiste)
+                ->orderByDesc('id')->get(['id', 'name', 'phone', 'matricule', 'status'])
+                ->map(fn (User $u): array => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'phone' => $u->phone,
+                    'matricule' => $u->matricule,
+                    'status' => $u->status->value,
+                ]),
+        ]);
+    }
+
+    public function toggleOrganizationStatus(Request $request, Organization $organization, SetOrganizationStatus $setStatus): RedirectResponse
+    {
+        $newStatus = $organization->status === OrganizationStatus::Active
+            ? OrganizationStatus::Suspended
+            : OrganizationStatus::Active;
+
+        $setStatus->handle($organization, $newStatus, $request->user()?->id);
+
+        return back()->with('status', $newStatus === OrganizationStatus::Suspended
+            ? 'Organisation suspendue — ses paiements sont bloqués.'
+            : 'Organisation réactivée.');
     }
 
     public function audit(): Response

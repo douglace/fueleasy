@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -16,6 +16,7 @@ import {
     Select,
     Table,
 } from '@/components/fusy';
+import { ConfirmButton } from '@/components/overlays';
 
 interface Organization {
     id: number;
@@ -413,6 +414,7 @@ export default function AdminOrganizations({
                             'Nom',
                             'Statut',
                             { label: 'Solde carburant', num: true },
+                            '',
                         ]}
                         empty="Aucune organisation."
                     >
@@ -433,7 +435,18 @@ export default function AdminOrganizations({
                                         <span className="tag-demo">Démo</span>
                                     )}
                                 </td>
-                                <td className="strong">{o.name}</td>
+                                <td className="strong">
+                                    {o.type === 'station' ? (
+                                        <Link
+                                            href={`/admin/stations/${o.id}`}
+                                            className="hover:underline"
+                                        >
+                                            {o.name}
+                                        </Link>
+                                    ) : (
+                                        o.name
+                                    )}
+                                </td>
                                 <td>
                                     <Badge domain="org" value={o.status} />
                                 </td>
@@ -443,6 +456,46 @@ export default function AdminOrganizations({
                                     ) : (
                                         fcfa(o.balance)
                                     )}
+                                </td>
+                                <td>
+                                    <div className="row-actions">
+                                        <ConfirmButton
+                                            variant="ghost"
+                                            size="sm"
+                                            icon={
+                                                o.status === 'active'
+                                                    ? 'pause'
+                                                    : 'play'
+                                            }
+                                            danger={o.status === 'active'}
+                                            title={
+                                                o.status === 'active'
+                                                    ? 'Suspendre cette organisation ?'
+                                                    : 'Réactiver cette organisation ?'
+                                            }
+                                            description={
+                                                o.status === 'active'
+                                                    ? `Tous les paiements impliquant ${o.name} seront bloqués jusqu'à réactivation.`
+                                                    : `${o.name} pourra de nouveau effectuer ou recevoir des paiements.`
+                                            }
+                                            confirmLabel={
+                                                o.status === 'active'
+                                                    ? 'Suspendre'
+                                                    : 'Réactiver'
+                                            }
+                                            onConfirm={() =>
+                                                router.post(
+                                                    `/admin/organizations/${o.id}/toggle-status`,
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            {o.status === 'active'
+                                                ? 'Suspendre'
+                                                : 'Réactiver'}
+                                        </ConfirmButton>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
