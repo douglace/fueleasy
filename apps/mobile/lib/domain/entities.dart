@@ -229,6 +229,23 @@ class Payment {
 }
 
 /// Session de travail ouverte (POST /work-sessions) ou QR courant.
+/// Paiements du jour côté pompiste, avec le périmètre réellement appliqué
+/// par le serveur : `pump` (pompe de la session ouverte) ou `station`
+/// (bascule automatique quand aucune session n'est ouverte).
+class TodayPayments {
+  const TodayPayments({
+    required this.payments,
+    required this.appliedScope,
+    this.pumpId,
+  });
+
+  final List<Payment> payments;
+  final String appliedScope;
+  final int? pumpId;
+
+  bool get isStationScope => appliedScope == 'station';
+}
+
 class WorkSessionQr {
   const WorkSessionQr({
     required this.workSessionId,

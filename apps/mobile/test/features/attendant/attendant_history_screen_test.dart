@@ -31,10 +31,14 @@ void main() {
       ProviderScope(
         overrides: [
           attendantTodayPaymentsProvider.overrideWith(
-            (ref) async => [
-              payment(shortCode: 'AAAAAA'),
-              payment(shortCode: 'BBBBBB', ackedAt: '2026-07-01T12:06:00Z'),
-            ],
+            (ref) async => TodayPayments(
+              payments: [
+                payment(shortCode: 'AAAAAA'),
+                payment(shortCode: 'BBBBBB', ackedAt: '2026-07-01T12:06:00Z'),
+              ],
+              appliedScope: 'pump',
+              pumpId: 2,
+            ),
           ),
         ],
         child: const MaterialApp(home: AttendantHistoryScreen()),

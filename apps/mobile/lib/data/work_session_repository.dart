@@ -31,11 +31,21 @@ class WorkSessionRepository {
     (data) => WorkSessionQr.fromJson(data as Map<String, dynamic>),
   );
 
-  Future<List<Payment>> todaysPayments() => runApi(
-    () => _dio.get('station/payments/today'),
-    (data) => ((data as Map<String, dynamic>)['data'] as List)
-        .map((e) => Payment.fromJson(e as Map<String, dynamic>))
-        .toList(),
+  /// Paiements du jour. `scope=pump` (défaut) filtre sur la pompe de la
+  /// session ouverte ; le serveur bascule en vue station si aucune session
+  /// n'est ouverte et renvoie le périmètre effectivement appliqué.
+  Future<TodayPayments> todaysPayments({String scope = 'pump'}) => runApi(
+    () => _dio.get('station/payments/today', queryParameters: {'scope': scope}),
+    (data) {
+      final map = data as Map<String, dynamic>;
+      return TodayPayments(
+        payments: (map['data'] as List)
+            .map((e) => Payment.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        appliedScope: (map['scope'] as String?) ?? scope,
+        pumpId: map['pump_id'] as int?,
+      );
+    },
   );
 
   Future<Payment?> searchByCode(String code) => runApi(

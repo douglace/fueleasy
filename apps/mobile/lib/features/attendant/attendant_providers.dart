@@ -18,7 +18,28 @@ final currentSessionProvider = FutureProvider<WorkSessionQr?>((ref) async {
   }
 });
 
-/// Paiements du jour de la station du pompiste.
-final attendantTodayPaymentsProvider = FutureProvider<List<Payment>>((ref) {
-  return ref.watch(workSessionRepositoryProvider).todaysPayments();
+/// Périmètre d'historique choisi par le pompiste : sa pompe (défaut) ou
+/// toute la station.
+enum HistoryScope { pump, station }
+
+class HistoryScopeNotifier extends Notifier<HistoryScope> {
+  @override
+  HistoryScope build() => HistoryScope.pump;
+
+  void set(HistoryScope scope) => state = scope;
+}
+
+final historyScopeProvider =
+    NotifierProvider<HistoryScopeNotifier, HistoryScope>(
+      HistoryScopeNotifier.new,
+    );
+
+/// Paiements du jour, filtrés selon [historyScopeProvider]. Le serveur peut
+/// élargir en vue station si aucune session n'est ouverte (voir
+/// [TodayPayments.appliedScope]).
+final attendantTodayPaymentsProvider = FutureProvider<TodayPayments>((ref) {
+  final scope = ref.watch(historyScopeProvider);
+  return ref
+      .watch(workSessionRepositoryProvider)
+      .todaysPayments(scope: scope.name);
 });

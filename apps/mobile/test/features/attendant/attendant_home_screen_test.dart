@@ -31,7 +31,10 @@ void main() {
         overrides: [
           currentSessionProvider.overrideWith((ref) async => null),
           attendantPumpsProvider.overrideWith((ref) async => const []),
-          attendantTodayPaymentsProvider.overrideWith((ref) async => const []),
+          attendantTodayPaymentsProvider.overrideWith(
+            (ref) async =>
+                const TodayPayments(payments: [], appliedScope: 'station'),
+          ),
         ],
         child: const MaterialApp(home: AttendantHomeScreen()),
       ),
@@ -55,10 +58,14 @@ void main() {
           currentSessionProvider.overrideWith((ref) async => null),
           attendantPumpsProvider.overrideWith((ref) async => const []),
           attendantTodayPaymentsProvider.overrideWith(
-            (ref) async => [
-              payment(),
-              payment(ackedAt: '2026-07-01T12:06:00Z'),
-            ],
+            (ref) async => TodayPayments(
+              payments: [
+                payment(),
+                payment(ackedAt: '2026-07-01T12:06:00Z'),
+              ],
+              appliedScope: 'pump',
+              pumpId: 2,
+            ),
           ),
         ],
         child: const MaterialApp(home: AttendantHomeScreen()),

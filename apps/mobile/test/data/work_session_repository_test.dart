@@ -81,16 +81,35 @@ void main() {
     expect(() => repo.currentQr(), throwsA(isA<NotFoundFailure>()));
   });
 
-  test('todaysPayments unwraps the data envelope', () async {
+  test('todaysPayments unwraps the data envelope with applied scope', () async {
     adapter.onGet(
       'station/payments/today',
       (server) => server.reply(200, {
         'data': [paymentJson(ackedAt: '2026-07-01T12:06:00Z')],
+        'scope': 'pump',
+        'pump_id': 2,
       }),
+      queryParameters: {'scope': 'pump'},
     );
-    final list = await repo.todaysPayments();
-    expect(list, hasLength(1));
-    expect(list.first.isAcknowledged, isTrue);
+    final today = await repo.todaysPayments();
+    expect(today.payments, hasLength(1));
+    expect(today.payments.first.isAcknowledged, isTrue);
+    expect(today.appliedScope, 'pump');
+    expect(today.pumpId, 2);
+    expect(today.isStationScope, isFalse);
+  });
+
+  test('todaysPayments reports the station fallback scope', () async {
+    adapter.onGet(
+      'station/payments/today',
+      (server) =>
+          server.reply(200, {'data': [], 'scope': 'station', 'pump_id': null}),
+      queryParameters: {'scope': 'pump'},
+    );
+    final today = await repo.todaysPayments();
+    expect(today.payments, isEmpty);
+    expect(today.isStationScope, isTrue);
+    expect(today.pumpId, isNull);
   });
 
   test('searchByCode returns null when not found', () async {

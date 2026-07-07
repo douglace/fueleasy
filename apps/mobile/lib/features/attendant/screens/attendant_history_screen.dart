@@ -12,6 +12,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../domain/entities.dart';
 import '../attendant_providers.dart';
 import '../widgets/ack_status_badge.dart';
+import '../widgets/history_scope_toggle.dart';
 import 'attendant_payment_detail_screen.dart';
 
 enum _Filter { all, toAck, acked }
@@ -44,7 +45,9 @@ class _AttendantHistoryScreenState
             message: 'Impossible de charger l\'historique.',
             onRetry: () => ref.invalidate(attendantTodayPaymentsProvider),
           ),
-          data: (list) {
+          data: (today) {
+            final list = today.payments;
+            final scope = ref.watch(historyScopeProvider);
             final total = list.fold<int>(0, (sum, p) => sum + p.amount);
             final filtered = switch (_filter) {
               _Filter.all => list,
@@ -55,6 +58,16 @@ class _AttendantHistoryScreenState
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.screenMargin),
               children: [
+                const HistoryScopeToggle(),
+                if (scope == HistoryScope.pump && today.isStationScope) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Vue station — aucune session ouverte sur une pompe.',
+                    style: AppTypography.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
                 AppCard(
                   elevated: true,
                   padding: const EdgeInsets.all(AppSpacing.xl),

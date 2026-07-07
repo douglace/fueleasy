@@ -12,6 +12,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../domain/entities.dart';
 import '../attendant_providers.dart';
 import '../widgets/ack_status_badge.dart';
+import '../widgets/history_scope_toggle.dart';
 import '../widgets/session_card.dart';
 import 'attendant_payment_detail_screen.dart';
 import 'search_code_screen.dart';
@@ -50,8 +51,10 @@ class AttendantHomeScreen extends ConsumerWidget {
             payments.when(
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
-              data: (list) => _TodayHeader(payments: list),
+              data: (today) => _TodayHeader(today: today),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            const HistoryScopeToggle(),
             const SizedBox(height: AppSpacing.sm),
             payments.when(
               loading: () => const SkeletonTheme(
@@ -73,7 +76,8 @@ class AttendantHomeScreen extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              data: (list) {
+              data: (today) {
+                final list = today.payments;
                 if (list.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(
@@ -125,12 +129,13 @@ class AttendantHomeScreen extends ConsumerWidget {
 
 /// En-tête « Aujourd'hui » + total encaissé du jour (paiements payés).
 class _TodayHeader extends StatelessWidget {
-  const _TodayHeader({required this.payments});
+  const _TodayHeader({required this.today});
 
-  final List<Payment> payments;
+  final TodayPayments today;
 
   @override
   Widget build(BuildContext context) {
+    final payments = today.payments;
     final total = payments
         .where((p) => p.status.isPaid)
         .fold<int>(0, (sum, p) => sum + p.amount);
@@ -139,7 +144,10 @@ class _TodayHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text('Aujourd\'hui', style: AppTypography.title3),
+        Text(
+          today.isStationScope ? 'Aujourd\'hui — station' : 'Aujourd\'hui',
+          style: AppTypography.title3,
+        ),
         if (payments.isNotEmpty)
           Text(
             formatFcfa(total),

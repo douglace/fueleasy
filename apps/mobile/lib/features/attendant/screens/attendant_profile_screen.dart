@@ -27,6 +27,31 @@ class _AttendantProfileScreenState
   bool _closing = false;
   String? _errorMessage;
 
+  Future<void> _confirmCloseSession(int workSessionId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Fermer la session ?'),
+        content: const Text(
+          'Le QR de votre pompe ne sera plus valable pour encaisser '
+          'jusqu\'à l\'ouverture d\'une nouvelle session.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.errorText),
+            child: const Text('Fermer la session'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _closeSession(workSessionId);
+  }
+
   Future<void> _closeSession(int workSessionId) async {
     if (_closing) return;
     setState(() {
@@ -36,6 +61,9 @@ class _AttendantProfileScreenState
     try {
       await ref.read(workSessionRepositoryProvider).close(workSessionId);
       ref.invalidate(currentSessionProvider);
+      // Sans session, le scope « ma pompe » bascule côté serveur en vue
+      // station : recharge la liste du jour pour refléter ce changement.
+      ref.invalidate(attendantTodayPaymentsProvider);
     } on Failure catch (f) {
       setState(() => _errorMessage = f.message);
     } finally {
@@ -115,7 +143,7 @@ class _AttendantProfileScreenState
                       icon: Icons.stop_circle_outlined,
                       onPressed: _closing
                           ? null
-                          : () => _closeSession(qr.workSessionId),
+                          : () => _confirmCloseSession(qr.workSessionId),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
