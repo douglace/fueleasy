@@ -93,20 +93,45 @@ class WorkSessionController extends Controller
 
     /**
      * Paiements du jour reçus par la station du pompiste (alertes / preuve serveur).
+     *
+     * Par défaut (scope=pump), filtre sur la pompe de la session ouverte du
+     * pompiste ; sans session ouverte, bascule silencieusement en vue station.
      */
     public function todaysPayments(Request $request): JsonResponse
     {
         $pompiste = $this->assertPompiste($request);
+        $data = $request->validate(['scope' => ['sometimes', 'in:pump,station']]);
+
+        $scope = $data['scope'] ?? 'pump';
+        $pumpId = null;
+
+        if ($scope === 'pump') {
+            $session = WorkSession::query()
+                ->where('user_id', $pompiste->id)
+                ->where('status', WorkSessionStatus::Open)
+                ->latest('id')
+                ->first();
+
+            $pumpId = $session?->pump_id;
+            if ($pumpId === null) {
+                $scope = 'station';
+            }
+        }
 
         $payments = Payment::query()
             ->where('station_organization_id', $pompiste->organization_id)
             ->where('status', PaymentStatus::Paid)
             ->whereDate('confirmed_at', now()->toDateString())
+            ->when($pumpId !== null, fn ($query) => $query->where('pump_id', $pumpId))
             ->orderByDesc('confirmed_at')
             ->limit(100)
             ->get();
 
-        return response()->json(['data' => PaymentResource::collection($payments)]);
+        return response()->json([
+            'data' => PaymentResource::collection($payments),
+            'scope' => $scope,
+            'pump_id' => $pumpId,
+        ]);
     }
 
     /**
