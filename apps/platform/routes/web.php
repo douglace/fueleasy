@@ -38,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::get('transactions', [EnterpriseDashboardController::class, 'transactions'])->name('transactions');
 
         Route::post('drivers', [EnterpriseDashboardController::class, 'storeDriver'])->name('drivers.store');
+        Route::patch('drivers/{driver}', [EnterpriseDashboardController::class, 'updateDriver'])->name('drivers.update');
         Route::post('drivers/{driver}/reset-pin', [EnterpriseDashboardController::class, 'resetDriverPin'])->name('drivers.reset-pin');
         Route::post('drivers/{driver}/suspend', [EnterpriseDashboardController::class, 'suspendDriver'])->name('drivers.suspend');
         Route::post('drivers/{driver}/budget', [EnterpriseDashboardController::class, 'setBudget'])->name('drivers.budget');
@@ -56,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::post('pumps', [StationDashboardController::class, 'storePump'])->name('pumps.store');
         Route::post('pumps/{pump}/toggle-qr', [StationDashboardController::class, 'togglePumpQr'])->name('pumps.toggle-qr');
         Route::post('pompistes', [StationDashboardController::class, 'storePompiste'])->name('pompistes.store');
+        Route::patch('pompistes/{pompiste}', [StationDashboardController::class, 'updatePompiste'])->name('pompistes.update');
         Route::post('pompistes/{pompiste}/reset-pin', [StationDashboardController::class, 'resetPompistePin'])->name('pompistes.reset-pin');
         Route::post('pompistes/{pompiste}/suspend', [StationDashboardController::class, 'suspendPompiste'])->name('pompistes.suspend');
         Route::post('payments/{payment}/refund', [StationDashboardController::class, 'requestRefund'])->name('payments.refund');

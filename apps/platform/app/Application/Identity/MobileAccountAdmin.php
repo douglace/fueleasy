@@ -52,6 +52,25 @@ final class MobileAccountAdmin
         return ['user' => $user, 'temporary_pin' => $temporaryPin];
     }
 
+    public function update(User $user, string $name, ?string $phone = null, ?string $matricule = null, ?int $actorId = null): User
+    {
+        $user->forceFill([
+            'name' => $name,
+            'phone' => $phone,
+            'matricule' => $matricule,
+        ])->save();
+
+        $this->audit->record(
+            action: 'mobile_account.updated',
+            subject: $user,
+            organizationId: $user->organization_id,
+            actorId: $actorId,
+            context: ['changed' => array_keys($user->getChanges())],
+        );
+
+        return $user;
+    }
+
     public function resetPin(User $user, ?int $actorId = null): string
     {
         $temporaryPin = $this->generatePin();

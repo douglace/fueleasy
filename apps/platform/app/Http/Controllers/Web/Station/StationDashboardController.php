@@ -22,6 +22,7 @@ use App\Support\DashboardCharts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -98,17 +99,7 @@ class StationDashboardController extends Controller
         return Inertia::render('station/payments', [
             'payments' => Payment::query()
                 ->where('station_organization_id', $org)->with('enterprise:id,name')
-                ->orderByDesc('id')->limit(200)->get()
-                ->map(fn (Payment $p): array => [
-                    'id' => $p->id,
-                    'reference' => $p->reference,
-                    'short_code' => $p->short_code,
-                    'amount' => $p->amount,
-                    'status' => $p->status->value,
-                    'enterprise' => $p->enterprise->name,
-                    'fuel_type' => $p->fuel_type->value,
-                    'confirmed_at' => $p->confirmed_at?->toDateTimeString(),
-                ]),
+                ->orderByDesc('id')->limit(200)->get()->map($this->mapPayment(...)),
         ]);
     }
 
@@ -175,6 +166,23 @@ class StationDashboardController extends Controller
         return back()->with('status', 'Pompiste créé. PIN temporaire : '.$result['temporary_pin']);
     }
 
+    public function updatePompiste(Request $request, User $pompiste, MobileAccountAdmin $accounts): RedirectResponse
+    {
+        $this->assertOwnership($request, $pompiste->organization_id);
+        abort_unless($pompiste->role === Role::Pompiste, SymfonyResponse::HTTP_NOT_FOUND);
+
+        $org = (int) $request->user()?->organization_id;
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:191'],
+            'phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')->where('organization_id', $org)->ignore($pompiste->id)],
+            'matricule' => ['nullable', 'string', 'max:64', Rule::unique('users', 'matricule')->where('organization_id', $org)->ignore($pompiste->id)],
+        ]);
+
+        $accounts->update($pompiste, $data['name'], $data['phone'] ?? null, $data['matricule'] ?? null, $request->user()?->id);
+
+        return back()->with('status', 'Fiche pompiste mise à jour.');
+    }
+
     public function resetPompistePin(Request $request, User $pompiste, MobileAccountAdmin $accounts): RedirectResponse
     {
         $this->assertOwnership($request, $pompiste->organization_id);
@@ -221,6 +229,7 @@ class StationDashboardController extends Controller
             'enterprise' => $p->enterprise->name,
             'fuel_type' => $p->fuel_type->value,
             'confirmed_at' => $p->confirmed_at?->toDateTimeString(),
+            'alert_acknowledged_at' => $p->alert_acknowledged_at?->toDateTimeString(),
         ];
     }
 }

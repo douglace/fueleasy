@@ -2,6 +2,7 @@ import { router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { ConnectionCode } from '@/components/connection-code';
+import { EditAccountDrawer } from '@/components/edit-account-drawer';
 import {
     Badge,
     BudgetBar,
@@ -42,6 +43,7 @@ const MODE_LABEL: Record<string, string> = {
 export default function EnterpriseDrivers({ drivers }: { drivers: Driver[] }) {
     const driverForm = useForm({ name: '', phone: '', matricule: '' });
     const [editing, setEditing] = useState<Driver | null>(null);
+    const [editingProfile, setEditingProfile] = useState<Driver | null>(null);
     const [mode, setMode] = useState('manual');
     const [amount, setAmount] = useState('');
 
@@ -223,6 +225,14 @@ export default function EnterpriseDrivers({ drivers }: { drivers: Driver[] }) {
                                         >
                                             Budget
                                         </Btn>
+                                        <Btn
+                                            variant="ghost"
+                                            size="sm"
+                                            icon="edit"
+                                            onClick={() => setEditingProfile(d)}
+                                        >
+                                            Modifier
+                                        </Btn>
                                         <ConfirmButton
                                             variant="ghost"
                                             size="sm"
@@ -322,6 +332,16 @@ export default function EnterpriseDrivers({ drivers }: { drivers: Driver[] }) {
                     </Btn>
                 </div>
             </Drawer>
+
+            {editingProfile && (
+                <EditAccountDrawer
+                    key={editingProfile.id}
+                    account={editingProfile}
+                    url={`/enterprise/drivers/${editingProfile.id}`}
+                    title={`Modifier ${editingProfile.name}`}
+                    onClose={() => setEditingProfile(null)}
+                />
+            )}
         </Page>
     );
 }

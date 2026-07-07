@@ -1,6 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { useState } from 'react';
 import { ConnectionCode } from '@/components/connection-code';
+import { EditAccountDrawer } from '@/components/edit-account-drawer';
 import {
     Badge,
     Btn,
@@ -30,6 +32,7 @@ export default function StationPompistes({
     pompistes: Pompiste[];
 }) {
     const form = useForm({ name: '', phone: '', matricule: '' });
+    const [editing, setEditing] = useState<Pompiste | null>(null);
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -197,6 +200,14 @@ export default function StationPompistes({
                                 </td>
                                 <td>
                                     <div className="row-actions">
+                                        <Btn
+                                            variant="ghost"
+                                            size="sm"
+                                            icon="edit"
+                                            onClick={() => setEditing(u)}
+                                        >
+                                            Modifier
+                                        </Btn>
                                         <ConfirmButton
                                             variant="ghost"
                                             size="sm"
@@ -257,6 +268,16 @@ export default function StationPompistes({
                     </Table>
                 </section>
             </div>
+
+            {editing && (
+                <EditAccountDrawer
+                    key={editing.id}
+                    account={editing}
+                    url={`/station/pompistes/${editing.id}`}
+                    title={`Modifier ${editing.name}`}
+                    onClose={() => setEditing(null)}
+                />
+            )}
         </Page>
     );
 }

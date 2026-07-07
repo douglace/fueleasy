@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Support\DashboardCharts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -120,6 +121,23 @@ class EnterpriseDashboardController extends Controller
         $result = $accounts->create($org, Role::Driver, $data['name'], $data['phone'] ?? null, $data['matricule'] ?? null, $request->user()?->id);
 
         return back()->with('status', 'Chauffeur créé. PIN temporaire : '.$result['temporary_pin']);
+    }
+
+    public function updateDriver(Request $request, User $driver, MobileAccountAdmin $accounts): RedirectResponse
+    {
+        $this->assertOwnership($request, $driver);
+        abort_unless($driver->role === Role::Driver, SymfonyResponse::HTTP_NOT_FOUND);
+
+        $org = $this->organizationId($request);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:191'],
+            'phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')->where('organization_id', $org)->ignore($driver->id)],
+            'matricule' => ['nullable', 'string', 'max:64', Rule::unique('users', 'matricule')->where('organization_id', $org)->ignore($driver->id)],
+        ]);
+
+        $accounts->update($driver, $data['name'], $data['phone'] ?? null, $data['matricule'] ?? null, $request->user()?->id);
+
+        return back()->with('status', 'Fiche chauffeur mise à jour.');
     }
 
     public function resetDriverPin(Request $request, User $driver, MobileAccountAdmin $accounts): RedirectResponse

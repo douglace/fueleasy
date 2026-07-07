@@ -26,6 +26,7 @@ interface PaymentRow {
     enterprise: string;
     fuel_type: string;
     confirmed_at: string | null;
+    alert_acknowledged_at: string | null;
 }
 
 type Filter = 'all' | 'paid' | 'pending' | 'refunded' | 'expired';
@@ -116,6 +117,7 @@ export default function StationPayments({
                             { label: 'Montant', num: true },
                             'Statut',
                             'Confirmé',
+                            'Accusé',
                             '',
                         ]}
                         empty="Aucun paiement ne correspond à ce filtre."
@@ -140,6 +142,17 @@ export default function StationPayments({
                                 </td>
                                 <td className="tnum sub">
                                     {timeOf(p.confirmed_at)}
+                                </td>
+                                <td>
+                                    {p.alert_acknowledged_at ? (
+                                        <Badge tone="ok">
+                                            {timeOf(p.alert_acknowledged_at)}
+                                        </Badge>
+                                    ) : p.status === 'paid' ? (
+                                        <Badge tone="neutral">À accuser</Badge>
+                                    ) : (
+                                        <span className="muted">—</span>
+                                    )}
                                 </td>
                                 <td>
                                     <div className="row-actions">
