@@ -1,5 +1,15 @@
 # Lessons — apps/platform
 
+## 2026-07-07 — Gate CI masquée par un pipe ; callback http_mock_adapter exécuté à l'enregistrement
+
+**Symptôme** : (1) `composer ci:check 2>&1 | tail` annoncé « exit 0 » alors que PHPUnit avait échoué (136 tests KO, base Postgres arrêtée) — la porte de sortie avant commit était un faux positif. (2) Côté mobile, un test `http_mock_adapter` qui posait un flag dans le callback `onPost('…/close', (server) { called = true; … })` voyait le flag à `true` sans qu'aucune requête ne parte.
+
+**Cause** : (1) dans un pipe zsh, le code de sortie est celui de la **dernière** commande (`tail`) — l'échec de `composer ci:check` est avalé. (2) `http_mock_adapter` exécute le callback `onPost/onGet` **au moment de l'enregistrement** (pour construire la réponse), pas au moment de la requête : tout effet de bord y est déclenché immédiatement.
+
+**Correction** : (1) lire le JSON `{"tool":"phpunit","result":…}` de la sortie (ou `set -o pipefail`) plutôt que se fier au code de sortie d'un pipe ; le conteneur `platform-db-1` doit tourner (`docker start platform-db-1`). (2) Tracer les appels réels via un `InterceptorsWrapper` sur Dio (`onRequest` → liste des paths) et garder les callbacks d'adapter purs (uniquement `server.reply`).
+
+**Pour la prochaine fois** : ne jamais conclure « gate verte » depuis un pipe tronqué — chercher la ligne `"result":"passed"` de chaque outil. Dans les tests Flutter, un callback d'adapter n'est pas un espion de requête.
+
 ## 2026-07-03 — `public/hot` résiduel casse le serve hôte ; lock npm désynchronisé casse le build Docker
 
 **Symptôme** : (1) `php artisan serve` hôte rend des pages blanches — tous les assets en `ERR_CONNECTION_REFUSED` alors que `public/build/` est frais. (2) `docker compose build` échoue sur `RUN npm ci` : « package.json and package-lock.json are not in sync — Missing: @emnapi/core… ».
