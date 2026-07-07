@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/haptics.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_effects.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
-import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/info_banner.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../attendant_providers.dart';
 
 /// Choix de la pompe pour ouvrir une session de travail.
@@ -59,26 +63,22 @@ class _OpenSessionScreenState extends ConsumerState<OpenSessionScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               if (_errorMessage != null) ...[
-                InlineErrorBanner(message: _errorMessage!),
+                InlineBanner(message: _errorMessage!),
                 const SizedBox(height: AppSpacing.lg),
               ],
               Expanded(
                 child: pumps.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => Center(
-                    child: Text(
-                      'Impossible de charger les pompes.',
-                      style: AppTypography.body,
-                    ),
+                  loading: () => const SkeletonList(count: 3, itemHeight: 64),
+                  error: (error, _) => ErrorState(
+                    message: 'Impossible de charger les pompes.',
+                    onRetry: () => ref.invalidate(attendantPumpsProvider),
                   ),
                   data: (list) {
                     if (list.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'Aucune pompe active pour cette station.',
-                          style: AppTypography.body,
-                        ),
+                      return const EmptyState(
+                        icon: Icons.local_gas_station_rounded,
+                        title: 'Aucune pompe active',
+                        message: 'Aucune pompe active pour cette station.',
                       );
                     }
                     return ListView.separated(
@@ -88,23 +88,13 @@ class _OpenSessionScreenState extends ConsumerState<OpenSessionScreen> {
                       itemBuilder: (context, index) {
                         final pump = list[index];
                         final selected = pump.id == _selectedPumpId;
-                        return AppCard(
-                          onTap: () =>
-                              setState(() => _selectedPumpId = pump.id),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(pump.label, style: AppTypography.bodyLarge),
-                              Icon(
-                                selected
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_off,
-                                color: selected
-                                    ? AppColors.navy
-                                    : AppColors.neutral300,
-                              ),
-                            ],
-                          ),
+                        return _PumpCard(
+                          label: pump.label,
+                          selected: selected,
+                          onTap: () {
+                            AppHaptics.tap();
+                            setState(() => _selectedPumpId = pump.id);
+                          },
                         );
                       },
                     );
@@ -116,6 +106,67 @@ class _OpenSessionScreenState extends ConsumerState<OpenSessionScreen> {
                 label: 'Ouvrir la session',
                 loading: _submitting,
                 onPressed: _selectedPumpId != null ? _openSession : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Carte-radio de pompe : bordure et fond marqués quand sélectionnée,
+/// zone tactile pleine largeur ≥ 56 dp.
+class _PumpCard extends StatelessWidget {
+  const _PumpCard({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: AppDurations.fast,
+      decoration: BoxDecoration(
+        color: selected ? AppColors.infoBg : AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(
+          color: selected ? AppColors.navy : AppColors.neutral200,
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.local_gas_station_rounded,
+                    size: 22,
+                    color: selected ? AppColors.navy : AppColors.neutral500,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    label,
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: selected ? AppColors.navy : AppColors.neutral300,
               ),
             ],
           ),

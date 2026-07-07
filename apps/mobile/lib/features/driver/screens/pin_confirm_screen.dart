@@ -8,8 +8,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/countdown_timer.dart';
+import '../../../core/widgets/info_banner.dart';
 import '../../../core/widgets/pin_input.dart';
 import '../../../domain/entities.dart';
 import '../../../domain/enums.dart';
@@ -145,28 +145,49 @@ class _PinConfirmScreenState extends ConsumerState<PinConfirmScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppCard(
+                elevated: true,
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Montant à payer',
+                                style: AppTypography.label,
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                formatFcfa(payment.amount),
+                                style: AppTypography.amount,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (expiresAt != null)
+                          CountdownRing(
+                            expiresAt: expiresAt,
+                            // Une demande Fusy est valable 5 minutes.
+                            totalDuration: const Duration(minutes: 5),
+                            onExpired: _onExpired,
+                            size: 56,
+                          ),
+                      ],
+                    ),
+                    const Divider(height: AppSpacing.xl),
                     _Row(label: 'Station', value: widget.stationName),
-                    const Divider(height: AppSpacing.xl),
-                    _Row(label: 'Montant', value: formatFcfa(payment.amount)),
-                    const Divider(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.sm),
                     _Row(label: 'Carburant', value: payment.fuelType.label),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              if (expiresAt != null)
-                Center(
-                  child: CountdownTimer(
-                    expiresAt: expiresAt,
-                    onExpired: _onExpired,
-                  ),
-                ),
               const SizedBox(height: AppSpacing.xl),
               if (_errorMessage != null) ...[
-                InlineErrorBanner(message: _errorMessage!),
+                InlineBanner(message: _errorMessage!),
                 const SizedBox(height: AppSpacing.lg),
               ],
               Text('PIN', style: AppTypography.label),

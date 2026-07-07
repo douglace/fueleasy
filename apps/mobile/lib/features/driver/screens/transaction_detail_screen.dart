@@ -10,7 +10,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/info_banner.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../domain/entities.dart';
 import '../receipt/open_receipt.dart';
@@ -68,13 +68,20 @@ class _TransactionDetailScreenState
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(formatFcfa(payment.amount), style: AppTypography.display),
+                Flexible(
+                  child: Text(
+                    formatFcfa(payment.amount),
+                    style: AppTypography.amountHero,
+                  ),
+                ),
                 StatusBadge(label: presentation.label, tone: presentation.tone),
               ],
             ),
             const SizedBox(height: AppSpacing.xl),
             AppCard(
+              elevated: true,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -107,10 +114,11 @@ class _TransactionDetailScreenState
             const SizedBox(height: AppSpacing.xl),
             if (payment.status.isPaid) ...[
               if (_errorMessage != null) ...[
-                InlineErrorBanner(message: _errorMessage!),
+                InlineBanner(message: _errorMessage!),
                 const SizedBox(height: AppSpacing.lg),
               ],
               PrimaryButton(
+                icon: Icons.receipt_long_rounded,
                 label: 'Voir le reçu',
                 loading: _loadingReceipt,
                 onPressed: _viewReceipt,

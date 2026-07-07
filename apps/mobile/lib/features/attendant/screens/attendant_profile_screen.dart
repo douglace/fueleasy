@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/providers.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/app_scaffold.dart';
+import '../../../core/widgets/info_banner.dart';
 import '../../auth/auth_controller.dart';
 import '../attendant_providers.dart';
 
@@ -46,57 +48,88 @@ class _AttendantProfileScreenState
     final auth = ref.watch(authControllerProvider);
     final profile = auth.value;
     final session = ref.watch(currentSessionProvider);
+    final name = profile?.name ?? '';
+    final initials = name.isEmpty
+        ? '?'
+        : name
+              .trim()
+              .split(RegExp(r'\s+'))
+              .take(2)
+              .map((w) => w[0].toUpperCase())
+              .join();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.screenMargin),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return NavyHeaderScaffold(
+      title: 'Profil',
+      subtitle: 'Votre compte pompiste Fusy.',
+      heroContent: AppCard(
+        elevated: true,
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.infoBg,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                initials,
+                style: AppTypography.title3.copyWith(color: AppColors.navy),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Pompiste', style: AppTypography.label),
+                  const SizedBox(height: 2),
+                  Text(name, style: AppTypography.title2),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screenMargin),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            session.when(
+              loading: () => const SizedBox.shrink(),
+              error: (error, _) => const SizedBox.shrink(),
+              data: (qr) {
+                if (qr == null) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Pompiste', style: AppTypography.label),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(profile?.name ?? '', style: AppTypography.title2),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              session.when(
-                loading: () => const SizedBox.shrink(),
-                error: (error, _) => const SizedBox.shrink(),
-                data: (qr) {
-                  if (qr == null) return const SizedBox.shrink();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_errorMessage != null) ...[
-                        InlineErrorBanner(message: _errorMessage!),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                      SecondaryButton(
-                        label: 'Fermer la session',
-                        onPressed: _closing
-                            ? null
-                            : () => _closeSession(qr.workSessionId),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
+                    if (_errorMessage != null) ...[
+                      InlineBanner(message: _errorMessage!),
+                      const SizedBox(height: AppSpacing.md),
                     ],
-                  );
-                },
-              ),
-              const Spacer(),
-              SecondaryButton(
-                label: 'Se déconnecter',
-                onPressed: () =>
-                    ref.read(authControllerProvider.notifier).logout(),
-              ),
-            ],
-          ),
+                    SecondaryButton(
+                      label: 'Fermer la session',
+                      icon: Icons.stop_circle_outlined,
+                      onPressed: _closing
+                          ? null
+                          : () => _closeSession(qr.workSessionId),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                );
+              },
+            ),
+            const Spacer(),
+            DestructiveButton(
+              label: 'Se déconnecter',
+              icon: Icons.logout_rounded,
+              onPressed: () =>
+                  ref.read(authControllerProvider.notifier).logout(),
+            ),
+          ],
         ),
       ),
     );

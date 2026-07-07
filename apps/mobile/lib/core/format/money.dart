@@ -4,7 +4,11 @@
 /// montant en fin de ligne. Deterministe, independant de la locale.
 final String _nbsp = String.fromCharCode(0xA0);
 
-String formatFcfa(int amount) {
+String formatFcfa(int amount) => '${formatFcfaDigits(amount)}${_nbsp}FCFA';
+
+/// Montant formaté sans le suffixe FCFA — pour les affichages ou le suffixe
+/// est porté par un autre élément (champ de saisie, AmountDisplay).
+String formatFcfaDigits(int amount) {
   final digits = amount.abs().toString();
   final buffer = StringBuffer();
   for (var i = 0; i < digits.length; i++) {
@@ -12,5 +16,5 @@ String formatFcfa(int amount) {
     buffer.write(digits[i]);
   }
   final sign = amount < 0 ? '-' : '';
-  return '$sign$buffer${_nbsp}FCFA';
+  return '$sign$buffer';
 }

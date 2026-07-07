@@ -6,6 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../domain/entities.dart';
 import '../attendant_providers.dart';
@@ -37,12 +39,10 @@ class _AttendantHistoryScreenState
       appBar: AppBar(title: const Text('Historique du jour')),
       body: SafeArea(
         child: payments.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Text(
-              'Impossible de charger l\'historique.',
-              style: AppTypography.body,
-            ),
+          loading: () => const SkeletonList(),
+          error: (error, _) => ErrorState(
+            message: 'Impossible de charger l\'historique.',
+            onRetry: () => ref.invalidate(attendantTodayPaymentsProvider),
           ),
           data: (list) {
             final total = list.fold<int>(0, (sum, p) => sum + p.amount);
@@ -56,6 +56,8 @@ class _AttendantHistoryScreenState
               padding: const EdgeInsets.all(AppSpacing.screenMargin),
               children: [
                 AppCard(
+                  elevated: true,
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -64,7 +66,12 @@ class _AttendantHistoryScreenState
                         children: [
                           Text('Paiements', style: AppTypography.label),
                           const SizedBox(height: AppSpacing.xs),
-                          Text('${list.length}', style: AppTypography.title2),
+                          Text(
+                            '${list.length}',
+                            style: AppTypography.title2.copyWith(
+                              fontFeatures: const [AppTypography.tabular],
+                            ),
+                          ),
                         ],
                       ),
                       Column(
@@ -72,7 +79,13 @@ class _AttendantHistoryScreenState
                         children: [
                           Text('Montant total', style: AppTypography.label),
                           const SizedBox(height: AppSpacing.xs),
-                          Text(formatFcfa(total), style: AppTypography.title2),
+                          Text(
+                            formatFcfa(total),
+                            style: AppTypography.title2.copyWith(
+                              color: AppColors.greenDark,
+                              fontFeatures: const [AppTypography.tabular],
+                            ),
+                          ),
                         ],
                       ),
                     ],

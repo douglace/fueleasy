@@ -69,7 +69,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: activatePath,
-        builder: (context, state) => const ActivationScreen(),
+        // Pré-remplissage depuis le login (flux « compte non activé »).
+        builder: (context, state) => ActivationScreen(
+          initialOrganizationCode: state.uri.queryParameters['org'],
+          initialIdentifier: state.uri.queryParameters['id'],
+        ),
       ),
       GoRoute(
         path: deviceChangePath,

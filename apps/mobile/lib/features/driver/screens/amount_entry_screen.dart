@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/format/money.dart';
+import '../../../core/haptics.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -23,6 +25,8 @@ class AmountEntryScreen extends StatefulWidget {
 }
 
 class _AmountEntryScreenState extends State<AmountEntryScreen> {
+  static const _quickAmounts = [5000, 10000, 20000];
+
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   late PaymentDraft _draft;
@@ -41,7 +45,16 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
   }
 
   void _selectFuel(FuelType fuel) {
+    AppHaptics.tap();
     setState(() => _draft = _draft.copyWith(fuelType: fuel));
+  }
+
+  void _applyQuickAmount(int amount) {
+    AppHaptics.tap();
+    // Le formateur de milliers ne tourne que sur saisie clavier : on formate
+    // nous-mêmes pour rester cohérent à l'écran.
+    _amountController.text = formatFcfaDigits(amount);
+    setState(() => _draft = _draft.copyWith(amount: amount));
   }
 
   void _continue() {
@@ -62,12 +75,40 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text('Station', style: AppTypography.label),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(_draft.station.name, style: AppTypography.title3),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: AppColors.successBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.local_gas_station_rounded,
+                        size: 20,
+                        color: AppColors.successText,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Station', style: AppTypography.label),
+                          const SizedBox(height: 2),
+                          Text(
+                            _draft.station.name,
+                            style: AppTypography.title3,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.lock_outline_rounded,
+                      size: 18,
+                      color: AppColors.neutral300,
+                    ),
                   ],
                 ),
               ),
@@ -79,6 +120,24 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                 autofocus: true,
                 onAmountChanged: (amount) =>
                     setState(() => _draft = _draft.copyWith(amount: amount)),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                children: [
+                  for (final amount in _quickAmounts)
+                    ActionChip(
+                      label: Text(formatFcfaDigits(amount)),
+                      onPressed: () => _applyQuickAmount(amount),
+                      labelStyle: AppTypography.body.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: const [AppTypography.tabular],
+                      ),
+                      side: const BorderSide(color: AppColors.neutral200),
+                      backgroundColor: AppColors.white,
+                    ),
+                ],
               ),
               const SizedBox(height: AppSpacing.xl),
               Text('Type de carburant', style: AppTypography.label),

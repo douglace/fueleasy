@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fusy_mobile/core/providers.dart';
+import 'package:fusy_mobile/core/widgets/app_scaffold.dart';
 import 'package:fusy_mobile/main.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -56,7 +57,7 @@ void main() {
     expect(find.text('Connexion'), findsOneWidget);
     await login(tester);
 
-    expect(find.text('Boris Mballa'), findsWidgets);
+    expect(find.textContaining('Boris Mballa'), findsWidgets);
     expect(find.text('Scanner une station'), findsOneWidget);
   });
 
@@ -68,9 +69,13 @@ void main() {
 
     await login(tester);
 
-    // "Paiements" apparaît à la fois en titre d'AppBar et en libellé de nav.
-    expect(find.widgetWithText(AppBar, 'Paiements'), findsOneWidget);
-    expect(find.byIcon(Icons.payments_outlined), findsOneWidget);
+    // "Paiements" apparaît à la fois en titre du header navy et en libellé de nav.
+    expect(
+      find.widgetWithText(NavyHeaderScaffold, 'Paiements'),
+      findsOneWidget,
+    );
+    // L'onglet actif affiche l'icône `selectedIcon` (variante pleine).
+    expect(find.byIcon(Icons.payments_rounded), findsOneWidget);
     expect(find.text('Eric Pompiste'), findsNothing); // pas d'écran chauffeur
   });
 }

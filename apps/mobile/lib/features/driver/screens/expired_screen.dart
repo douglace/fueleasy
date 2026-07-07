@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'camera_permission_screen.dart';
 
 /// La demande a expiré (5 minutes dépassées sans confirmation PIN).
@@ -16,53 +15,36 @@ class ExpiredScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Demande expirée')),
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.screenMargin),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.timer_off,
-                  size: 56,
-                  color: AppColors.warningText,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'La demande a expiré après 5 minutes sans confirmation.',
-                  style: AppTypography.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Aucun montant n\'a été débité.',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.neutral600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Créer une nouvelle demande',
-                  onPressed: () {
-                    final navigator = Navigator.of(context);
-                    navigator.popUntil((route) => route.isFirst);
-                    navigator.push(
-                      MaterialPageRoute(
-                        builder: (_) => const CameraPermissionScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
-                  child: const Text('Retour à l\'accueil'),
-                ),
-              ],
+        child: Column(
+          children: [
+            Expanded(
+              child: EmptyState(
+                icon: Icons.timer_off_rounded,
+                iconBg: AppColors.warningBg,
+                iconColor: AppColors.warningText,
+                title: 'La demande a expiré après 5 minutes sans confirmation.',
+                message: 'Aucun montant n\'a été débité.',
+                actionLabel: 'Créer une nouvelle demande',
+                onAction: () {
+                  final navigator = Navigator.of(context);
+                  navigator.popUntil((route) => route.isFirst);
+                  navigator.push(
+                    MaterialPageRoute(
+                      builder: (_) => const CameraPermissionScreen(),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: TextButton(
+                onPressed: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
+                child: const Text('Retour à l\'accueil'),
+              ),
+            ),
+          ],
         ),
       ),
     );

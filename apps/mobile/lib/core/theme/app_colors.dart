@@ -8,6 +8,19 @@ abstract final class AppColors {
   static const green = Color(0xFF00B473);
   static const greenDark = Color(0xFF007A4F);
 
+  // Header navy immersif (gradient + surfaces posées dessus).
+  static const navyDark = Color(0xFF00234A);
+  static const navyLight = Color(0xFF0A4A82);
+  static const navySurface = Color(0xFF0E3D6E);
+  static const onNavy = Color(0xFFFFFFFF);
+  static const onNavyMuted = Color(
+    0xB3FFFFFF,
+  ); // blanc 70 % — sous-titres uniquement
+  // AA : ne jamais poser `green` en texte <18pt sur navy (~3.5:1).
+
+  // Ombre unique teintée marque (pas de noir pur).
+  static const shadowNavy = Color(0x14003362);
+
   // Neutres
   static const neutral900 = Color(0xFF172B3A);
   static const neutral700 = Color(0xFF465B69);

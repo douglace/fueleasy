@@ -50,9 +50,17 @@ class _SessionCardState extends ConsumerState<SessionCard> {
     final session = ref.watch(currentSessionProvider);
 
     return session.when(
-      loading: () =>
-          const AppCard(child: Center(child: CircularProgressIndicator())),
+      loading: () => const AppCard(
+        elevated: true,
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.xl),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      ),
       error: (error, _) => AppCard(
+        elevated: true,
         child: Text(
           'Impossible de vérifier la session en cours.',
           style: AppTypography.body,
@@ -61,6 +69,8 @@ class _SessionCardState extends ConsumerState<SessionCard> {
       data: (qr) {
         if (qr == null) {
           return AppCard(
+            elevated: true,
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -72,9 +82,11 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                     color: AppColors.neutral600,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.lg),
                 PrimaryButton(
                   label: 'Ouvrir une session',
+                  icon: Icons.qr_code_2_rounded,
+                  background: AppColors.green,
                   onPressed: _openSession,
                 ),
               ],
@@ -91,20 +103,45 @@ class _SessionCardState extends ConsumerState<SessionCard> {
             : 'Pompe ${qr.pumpId}';
 
         return AppCard(
+          elevated: true,
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             children: [
-              Text(pumpLabel, style: AppTypography.title3),
-              const SizedBox(height: AppSpacing.md),
-              Semantics(
-                image: true,
-                label: 'QR code de la pompe à scanner par le chauffeur',
-                child: QrImageView(
-                  data: qr.qr,
-                  size: 200,
-                  backgroundColor: AppColors.white,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(pumpLabel, style: AppTypography.title3),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              // Fond blanc pur + marge généreuse : scannable en plein soleil.
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(color: AppColors.neutral200),
+                ),
+                child: Semantics(
+                  image: true,
+                  label: 'QR code de la pompe à scanner par le chauffeur',
+                  child: QrImageView(
+                    data: qr.qr,
+                    size: 232,
+                    backgroundColor: AppColors.white,
+                  ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 'Présentez ce QR au chauffeur',
                 style: AppTypography.caption,

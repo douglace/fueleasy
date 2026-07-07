@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'info_banner.dart';
 
 /// Champ texte Fusy : libellé persistant au-dessus (jamais un simple
 /// placeholder), aide sous le contrôle, erreur près du champ.
@@ -71,24 +71,12 @@ class AppTextField extends StatelessWidget {
 }
 
 /// Bandeau d'erreur pleine largeur (identifiants invalides, PIN verrouillé…).
+/// Alias de compatibilité — préférer [InlineBanner] pour les nouveaux usages.
 class InlineErrorBanner extends StatelessWidget {
   const InlineErrorBanner({super.key, required this.message});
 
   final String message;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.errorBg,
-        borderRadius: BorderRadius.circular(AppSpacing.sm),
-      ),
-      child: Text(
-        message,
-        style: AppTypography.body.copyWith(color: AppColors.errorText),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => InlineBanner(message: message);
 }

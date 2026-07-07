@@ -128,17 +128,96 @@ class _ScanOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 260,
-        height: 260,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 3),
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
+    return CustomPaint(size: Size.infinite, painter: _ScanOverlayPainter());
+  }
+}
+
+/// Scrim sombre avec découpe arrondie centrale et coins verts façon viseur.
+class _ScanOverlayPainter extends CustomPainter {
+  static const _window = 260.0;
+  static const _radius = 24.0;
+  static const _cornerLength = 36.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final window = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: center, width: _window, height: _window),
+      const Radius.circular(_radius),
+    );
+
+    // Scrim percé de la fenêtre de scan.
+    final scrim = Path()
+      ..addRect(Offset.zero & size)
+      ..addRRect(window)
+      ..fillType = PathFillType.evenOdd;
+    canvas.drawPath(
+      scrim,
+      Paint()..color = Colors.black.withValues(alpha: 0.55),
+    );
+
+    // Quatre coins verts (repère de visée, lisible en plein soleil).
+    final corner = Paint()
+      ..color = AppColors.green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    final rect = window.outerRect;
+
+    void arc(Offset arcCenter, double startAngle) {
+      canvas.drawArc(
+        Rect.fromCircle(center: arcCenter, radius: _radius),
+        startAngle,
+        1.5708, // 90°
+        false,
+        corner,
+      );
+    }
+
+    // Arcs des quatre coins + amorces droites.
+    arc(rect.topLeft.translate(_radius, _radius), 3.1416);
+    arc(rect.topRight.translate(-_radius, _radius), -1.5708);
+    arc(rect.bottomRight.translate(-_radius, -_radius), 0);
+    arc(rect.bottomLeft.translate(_radius, -_radius), 1.5708);
+
+    void line(Offset from, Offset to) => canvas.drawLine(from, to, corner);
+    final l = _cornerLength - _radius;
+    line(
+      rect.topLeft.translate(_radius, 0),
+      rect.topLeft.translate(_radius + l, 0),
+    );
+    line(
+      rect.topLeft.translate(0, _radius),
+      rect.topLeft.translate(0, _radius + l),
+    );
+    line(
+      rect.topRight.translate(-_radius, 0),
+      rect.topRight.translate(-_radius - l, 0),
+    );
+    line(
+      rect.topRight.translate(0, _radius),
+      rect.topRight.translate(0, _radius + l),
+    );
+    line(
+      rect.bottomLeft.translate(_radius, 0),
+      rect.bottomLeft.translate(_radius + l, 0),
+    );
+    line(
+      rect.bottomLeft.translate(0, -_radius),
+      rect.bottomLeft.translate(0, -_radius - l),
+    );
+    line(
+      rect.bottomRight.translate(-_radius, 0),
+      rect.bottomRight.translate(-_radius - l, 0),
+    );
+    line(
+      rect.bottomRight.translate(0, -_radius),
+      rect.bottomRight.translate(0, -_radius - l),
     );
   }
+
+  @override
+  bool shouldRepaint(_ScanOverlayPainter oldDelegate) => false;
 }
 
 class _ErrorBanner extends StatelessWidget {

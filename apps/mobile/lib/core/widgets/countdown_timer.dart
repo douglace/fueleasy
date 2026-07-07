@@ -78,3 +78,104 @@ class _CountdownTimerState extends State<CountdownTimer> {
     );
   }
 }
+
+/// Anneau de progression pour les délais courts (révélation budget 15 s,
+/// validité de la demande 5 min) : temps restant au centre, ring qui se vide.
+class CountdownRing extends StatefulWidget {
+  const CountdownRing({
+    super.key,
+    required this.expiresAt,
+    required this.totalDuration,
+    this.onExpired,
+    this.size = 64,
+    this.color = AppColors.navy,
+  });
+
+  final DateTime expiresAt;
+
+  /// Durée totale de référence — sert à calculer la fraction restante.
+  final Duration totalDuration;
+  final VoidCallback? onExpired;
+  final double size;
+  final Color color;
+
+  @override
+  State<CountdownRing> createState() => _CountdownRingState();
+}
+
+class _CountdownRingState extends State<CountdownRing> {
+  Timer? _timer;
+  late Duration _remaining;
+  bool _firedExpired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = _computeRemaining();
+    _timer = Timer.periodic(const Duration(milliseconds: 250), (_) => _tick());
+  }
+
+  Duration _computeRemaining() {
+    final diff = widget.expiresAt.difference(DateTime.now());
+    return diff.isNegative ? Duration.zero : diff;
+  }
+
+  void _tick() {
+    if (!mounted) return;
+    setState(() => _remaining = _computeRemaining());
+    if (_remaining == Duration.zero && !_firedExpired) {
+      _firedExpired = true;
+      _timer?.cancel();
+      widget.onExpired?.call();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.totalDuration.inMilliseconds;
+    final fraction = total == 0
+        ? 0.0
+        : (_remaining.inMilliseconds / total).clamp(0.0, 1.0);
+    final isUrgent = _remaining.inSeconds <= 60 && _remaining > Duration.zero;
+    final ringColor = isUrgent ? AppColors.warningText : widget.color;
+    final seconds = _remaining.inSeconds;
+    final label = seconds >= 60
+        ? '${(seconds ~/ 60).toString()}:${(seconds % 60).toString().padLeft(2, '0')}'
+        : seconds.toString();
+
+    return Semantics(
+      label: 'Temps restant : $label',
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox.expand(
+              child: CircularProgressIndicator(
+                value: fraction,
+                strokeWidth: 4,
+                strokeCap: StrokeCap.round,
+                color: ringColor,
+                backgroundColor: AppColors.neutral100,
+              ),
+            ),
+            Text(
+              label,
+              style: AppTypography.title3.copyWith(
+                color: ringColor,
+                fontFeatures: const [AppTypography.tabular],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

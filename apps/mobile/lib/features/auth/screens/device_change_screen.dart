@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/format/input_formatters.dart';
 import '../../../core/router/app_router.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/info_banner.dart';
 import '../../../core/widgets/pin_input.dart';
 import '../auth_controller.dart';
+import 'widgets/auth_shell.dart';
 
 /// Changement d'appareil en deux étapes : demande d'un code SMS (avec le PIN
 /// courant), puis confirmation avec ce code à 6 chiffres.
@@ -116,84 +118,97 @@ class _DeviceChangeScreenState extends ConsumerState<DeviceChangeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Changer d\'appareil')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.screenMargin),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                _codeSent
-                    ? 'Un code vous a été envoyé par SMS. Saisissez-le pour activer ce nouvel appareil.'
-                    : 'Confirmez votre identité avec votre PIN actuel pour recevoir un code SMS.',
-                style: AppTypography.body.copyWith(color: AppColors.neutral600),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              if (_errorMessage != null) ...[
-                InlineErrorBanner(message: _errorMessage!),
-                const SizedBox(height: AppSpacing.lg),
-              ] else if (_infoMessage != null) ...[
-                Text(
-                  _infoMessage!,
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.successText,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-              if (!_codeSent) ...[
-                AppTextField(
-                  label: 'Code entreprise',
-                  controller: _orgCodeController,
-                  textInputAction: TextInputAction.next,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AppTextField(
-                  label: 'Téléphone ou matricule',
-                  controller: _identifierController,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text('PIN actuel', style: AppTypography.label),
-                const SizedBox(height: AppSpacing.xs),
-                PinInput(controller: _pinController),
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Envoyer le code SMS',
-                  loading: _submitting,
-                  onPressed: _canRequest ? _requestCode : null,
-                ),
-              ] else ...[
-                Text('Code reçu par SMS', style: AppTypography.label),
-                const SizedBox(height: AppSpacing.xs),
-                PinInput(
-                  controller: _smsCodeController,
-                  length: 6,
-                  hasError: _errorMessage != null,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Confirmer',
-                  loading: _submitting,
-                  onPressed: _canConfirm ? _confirmCode : null,
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              Center(
-                child: TextButton(
-                  onPressed: () => context.go(loginPath),
-                  child: const Text('Retour à la connexion'),
-                ),
-              ),
-            ],
+    return AuthShell(
+      title: 'Changer d\'appareil',
+      subtitle: _codeSent
+          ? 'Un code vous a été envoyé par SMS. Saisissez-le pour activer ce nouvel appareil.'
+          : 'Confirmez votre identité avec votre PIN actuel pour recevoir un code SMS.',
+      onBack: () => context.go(loginPath),
+      footer: [
+        const SizedBox(height: AppSpacing.lg),
+        Center(
+          child: TextButton(
+            onPressed: () => context.go(loginPath),
+            child: const Text('Retour à la connexion'),
           ),
         ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_errorMessage != null) ...[
+            InlineBanner(message: _errorMessage!),
+            const SizedBox(height: AppSpacing.lg),
+          ] else if (_infoMessage != null) ...[
+            InlineBanner(message: _infoMessage!, tone: BannerTone.success),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          AppCard(
+            elevated: true,
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!_codeSent) ...[
+                  AppTextField(
+                    label: 'Code entreprise',
+                    controller: _orgCodeController,
+                    textInputAction: TextInputAction.next,
+                    helperText: '6 caractères — affiché sur votre espace Fusy',
+                    inputFormatters: organizationCodeFormatters,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppTextField(
+                    label: 'Téléphone ou matricule',
+                    controller: _identifierController,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('PIN actuel', style: AppTypography.label),
+                  const SizedBox(height: AppSpacing.xs),
+                  PinInput(controller: _pinController),
+                  const SizedBox(height: AppSpacing.xl),
+                  PrimaryButton(
+                    label: 'Envoyer le code SMS',
+                    loading: _submitting,
+                    onPressed: _canRequest ? _requestCode : null,
+                  ),
+                ] else ...[
+                  Text('Code reçu par SMS', style: AppTypography.label),
+                  const SizedBox(height: AppSpacing.xs),
+                  PinInput(
+                    controller: _smsCodeController,
+                    length: 6,
+                    hasError: _errorMessage != null,
+                    // Code à usage unique reçu par SMS : visible pour éviter
+                    // les erreurs de recopie.
+                    obscure: false,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  PrimaryButton(
+                    label: 'Confirmer',
+                    loading: _submitting,
+                    onPressed: _canConfirm ? _confirmCode : null,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  SecondaryButton(
+                    label: 'Renvoyer un code',
+                    onPressed: _submitting
+                        ? null
+                        : () {
+                            setState(() {
+                              _codeSent = false;
+                              _infoMessage = null;
+                              _smsCodeController.clear();
+                            });
+                          },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

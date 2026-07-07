@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/error/failure.dart';
 import '../../../core/format/money.dart';
 import '../../../core/providers.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
@@ -73,15 +74,26 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppCard(
+                elevated: true,
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _RecapRow(label: 'Station', value: draft.station.name),
-                    const Divider(height: AppSpacing.xl),
-                    _RecapRow(
-                      label: 'Montant',
-                      value: formatFcfa(draft.amount!),
+                    Text(
+                      'Montant de la demande',
+                      style: AppTypography.label,
+                      textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      formatFcfa(draft.amount!),
+                      style: AppTypography.amountHero,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const _TicketDivider(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _RecapRow(label: 'Station', value: draft.station.name),
                     const Divider(height: AppSpacing.xl),
                     _RecapRow(label: 'Carburant', value: draft.fuelType!.label),
                     if (draft.note != null && draft.note!.isNotEmpty) ...[
@@ -95,6 +107,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
               Text(
                 'Le débit interviendra à la confirmation de votre PIN.',
                 style: AppTypography.caption,
+                textAlign: TextAlign.center,
               ),
               const Spacer(),
               PrimaryButton(
@@ -113,6 +126,28 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Ligne pointillée façon ticket de caisse.
+class _TicketDivider extends StatelessWidget {
+  const _TicketDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final count = (constraints.maxWidth / 10).floor();
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            count,
+            (_) =>
+                Container(width: 5, height: 1.5, color: AppColors.neutral200),
+          ),
+        );
+      },
     );
   }
 }

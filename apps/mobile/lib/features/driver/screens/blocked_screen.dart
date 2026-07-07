@@ -1,53 +1,42 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/haptics.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/empty_state.dart';
 
 /// Page de blocage générique : une vérification préalable a échoué avant
 /// création de la transaction (station non autorisée, budget/solde
 /// insuffisant, compte suspendu…). Aucun débit n'a eu lieu.
-class BlockedScreen extends StatelessWidget {
+class BlockedScreen extends StatefulWidget {
   const BlockedScreen({super.key, required this.message});
 
   final String message;
+
+  @override
+  State<BlockedScreen> createState() => _BlockedScreenState();
+}
+
+class _BlockedScreenState extends State<BlockedScreen> {
+  @override
+  void initState() {
+    super.initState();
+    AppHaptics.error();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Demande bloquée')),
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.screenMargin),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.block, size: 56, color: AppColors.errorText),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  message,
-                  style: AppTypography.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Aucun montant n\'a été débité.',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.neutral600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Retour à l\'accueil',
-                  onPressed: () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
-                ),
-              ],
-            ),
-          ),
+        child: EmptyState(
+          icon: Icons.block_rounded,
+          iconBg: AppColors.errorBg,
+          iconColor: AppColors.errorText,
+          title: widget.message,
+          message: 'Aucun montant n\'a été débité.',
+          actionLabel: 'Retour à l\'accueil',
+          onAction: () =>
+              Navigator.of(context).popUntil((route) => route.isFirst),
         ),
       ),
     );

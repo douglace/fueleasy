@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import 'driver_history_screen.dart';
 import 'driver_home_screen.dart';
 import 'driver_profile_screen.dart';
@@ -30,18 +29,20 @@ class _DriverShellScreenState extends State<DriverShellScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        indicatorColor: AppColors.neutral100,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Accueil',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long_rounded),
             label: 'Historique',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Profil',
           ),
         ],

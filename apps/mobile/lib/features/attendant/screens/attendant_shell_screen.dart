@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import 'attendant_history_screen.dart';
 import 'attendant_home_screen.dart';
 import 'attendant_profile_screen.dart';
@@ -29,18 +28,20 @@ class _AttendantShellScreenState extends State<AttendantShellScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        indicatorColor: AppColors.neutral100,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.payments_outlined),
+            selectedIcon: Icon(Icons.payments_rounded),
             label: 'Paiements',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long_rounded),
             label: 'Historique',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Profil',
           ),
         ],

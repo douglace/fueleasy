@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/empty_state.dart';
 import 'scanner_screen.dart';
 
 /// Pré-permission caméra : explique l'usage avant de déclencher la demande
@@ -56,47 +57,51 @@ class _CameraPermissionScreenState extends State<CameraPermissionScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Scanner une station')),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.screenMargin),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppSpacing.xxl),
-              Icon(Icons.qr_code_scanner, size: 64, color: AppColors.navy),
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                'Fusy a besoin de la caméra',
-                style: AppTypography.title2,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Pour scanner le QR code affiché dans la station et démarrer une transaction.',
-                style: AppTypography.body.copyWith(color: AppColors.neutral600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              if (_permanentlyDenied) ...[
-                Text(
-                  'L\'accès à la caméra a été refusé. Autorisez-le dans les réglages de l\'appareil.',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.errorText,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                PrimaryButton(
-                  label: 'Ouvrir les réglages',
-                  onPressed: openAppSettings,
-                ),
-              ] else
-                PrimaryButton(
+        child: Column(
+          children: [
+            Expanded(
+              child: _permanentlyDenied
+                  ? EmptyState(
+                      icon: Icons.no_photography_rounded,
+                      iconBg: AppColors.errorBg,
+                      iconColor: AppColors.errorText,
+                      title: 'Accès caméra refusé',
+                      message:
+                          'L\'accès à la caméra a été refusé. Autorisez-le dans les réglages de l\'appareil.',
+                      actionLabel: 'Ouvrir les réglages',
+                      onAction: openAppSettings,
+                    )
+                  : EmptyState(
+                      icon: Icons.qr_code_scanner_rounded,
+                      iconBg: AppColors.infoBg,
+                      iconColor: AppColors.navy,
+                      title: 'Fusy a besoin de la caméra',
+                      message:
+                          'Pour scanner le QR code affiché dans la station et démarrer une transaction.',
+                    ),
+            ),
+            if (!_permanentlyDenied)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.screenMargin),
+                child: PrimaryButton(
                   label: 'Autoriser la caméra',
                   loading: _requesting,
                   onPressed: _requestPermission,
                 ),
-            ],
-          ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Annuler',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.neutral600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -12,6 +12,11 @@ sealed class Failure implements Exception {
   String toString() => '$runtimeType($message)';
 }
 
+/// Reason code renvoyé au login quand le compte n'a jamais été activé
+/// (PIN temporaire correct fourni). L'écran de connexion oriente alors
+/// vers le flux « Activer mon compte ».
+const accountNotActivatedReason = 'account_not_activated';
+
 /// Erreur métier 422 renvoyée par le backend (`{message, reason?}`).
 class DomainFailure extends Failure {
   const DomainFailure(super.message, {this.reasonCode});

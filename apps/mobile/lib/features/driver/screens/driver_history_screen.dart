@@ -7,6 +7,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../domain/entities.dart';
 import '../driver_providers.dart';
@@ -28,50 +31,26 @@ class DriverHistoryScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () => ref.refresh(driverHistoryProvider.future),
           child: history.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => ListView(
-              children: [
-                const SizedBox(height: AppSpacing.xxxl),
-                Center(
-                  child: Text(
-                    'Impossible de charger l\'historique.',
-                    style: AppTypography.body,
-                  ),
-                ),
-              ],
+            loading: () => const SkeletonList(),
+            error: (error, _) => ErrorState(
+              message:
+                  'Impossible de charger l\'historique. Vérifiez votre connexion.',
+              onRetry: () => ref.invalidate(driverHistoryProvider),
             ),
             data: (payments) {
-              if (payments.isEmpty) return const _EmptyHistory();
+              if (payments.isEmpty) {
+                return const EmptyState(
+                  icon: Icons.receipt_long_rounded,
+                  title: 'Aucune transaction pour le moment',
+                  message:
+                      'Votre premier reçu apparaîtra ici après une transaction payée.',
+                );
+              }
               return _GroupedHistoryList(payments: payments);
             },
           ),
         ),
       ),
-    );
-  }
-}
-
-class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.screenMargin),
-      children: [
-        const SizedBox(height: AppSpacing.xxxl),
-        Text(
-          'Aucune transaction pour le moment',
-          style: AppTypography.title3,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Votre premier reçu apparaîtra ici après une transaction payée.',
-          style: AppTypography.body.copyWith(color: AppColors.neutral600),
-          textAlign: TextAlign.center,
-        ),
-      ],
     );
   }
 }
@@ -101,7 +80,10 @@ class _GroupedHistoryList extends StatelessWidget {
               top: AppSpacing.md,
               bottom: AppSpacing.sm,
             ),
-            child: Text(entry.key, style: AppTypography.label),
+            child: Text(
+              entry.key,
+              style: AppTypography.label.copyWith(color: AppColors.neutral500),
+            ),
           ),
           for (final payment in entry.value) ...[
             _HistoryRow(payment: payment),
@@ -132,8 +114,21 @@ class _HistoryRow extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: AppColors.neutral100,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.local_gas_station_rounded,
+              size: 20,
+              color: AppColors.navy,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +142,13 @@ class _HistoryRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(formatFcfa(payment.amount), style: AppTypography.bodyLarge),
+              Text(
+                formatFcfa(payment.amount),
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [AppTypography.tabular],
+                ),
+              ),
               const SizedBox(height: AppSpacing.xs),
               StatusBadge(label: presentation.label, tone: presentation.tone),
             ],
