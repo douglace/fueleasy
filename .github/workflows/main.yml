@@ -102,6 +102,10 @@ jobs:
             sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASS}|" .env
             php artisan key:generate --force
           fi
+      env:
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASS: ${{ secrets.DB_PASS }}
 
     - name: Optimize VPS
       uses: appleboy/ssh-action@master
