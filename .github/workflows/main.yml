@@ -1,0 +1,102 @@
+name: Build and Deploy Fusy Platform
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  deploy-fusy:
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/platform
+
+    steps:
+
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Cache composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: apps/platform/vendor
+        key: composer-${{ hashFiles('apps/platform/composer.lock') }}
+        restore-keys: |
+          composer-
+
+    - name: Setup php
+      uses: shivammathur/setup-php@15c43e89cdef867065b0213be354c2841860869e
+      with:
+        php-version: '8.3'
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pgsql, pdo_pgsql, bcmath, soap, intl, gd, exif, iconv
+        coverage: none
+
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Cache Node dependencies
+      uses: actions/cache@v4
+      with:
+        path: apps/platform/node_modules
+        key: npm-${{ hashFiles('apps/platform/package-lock.json') }}
+        restore-keys: |
+          npm-
+
+    - name: Install JS dependencies with npm
+      run: npm ci
+
+    - name: Build assets
+      run: npm run build
+
+    - name: Change permission
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          bash /home/fusy/change_permission.sh
+
+    - name: Sync file to server
+      uses: easingthemes/ssh-deploy@main
+      env:
+        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        TARGET: "/home/fusy/public_html"
+        EXCLUDE: ".git, /node_modules/, /vendor/"
+        SOURCE: "apps/platform/"
+        ARGS: "-azr --no-group --no-perms --omit-dir-times"
+
+    - name: Change permission again
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          bash /home/fusy/change_permission.sh
+
+    - name: Optimize VPS
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/fusy/public_html
+          php artisan migrate --force
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan optimize
+          php artisan queue:restart
