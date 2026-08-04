@@ -86,6 +86,23 @@ jobs:
         script: |
           bash /home/fusy/change_permission.sh
 
+    - name: Prepare .env
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        envs: DB_NAME,DB_USER,DB_PASS
+        script: |
+          cd /home/fusy/public_html
+          if [ ! -f .env ]; then
+            cp .env.example .env
+            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_NAME}|" .env
+            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USER}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASS}|" .env
+            php artisan key:generate --force
+          fi
+
     - name: Optimize VPS
       uses: appleboy/ssh-action@master
       with:
