@@ -94,6 +94,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd /home/fusy/public_html
+          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
           php artisan migrate --force
           php artisan config:cache
           php artisan route:cache
