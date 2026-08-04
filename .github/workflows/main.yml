@@ -73,7 +73,7 @@ jobs:
         REMOTE_USER: ${{ secrets.REMOTE_USER }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         TARGET: "/home/fusy/public_html"
-        EXCLUDE: ".git, /node_modules/, /vendor/"
+        EXCLUDE: ".git, /node_modules/"
         SOURCE: "apps/platform/"
         ARGS: "-azr --no-group --no-perms --omit-dir-times"
 
@@ -94,7 +94,6 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd /home/fusy/public_html
-          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
           php artisan migrate --force
           php artisan config:cache
           php artisan route:cache
