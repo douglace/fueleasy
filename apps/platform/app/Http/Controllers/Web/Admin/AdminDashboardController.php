@@ -213,7 +213,7 @@ class AdminDashboardController extends Controller
         ]);
 
         $account = FuelAccount::query()->where('organization_id', $data['organization_id'])->firstOrFail();
-        $credit->handle($account, Money::fromInt($data['amount']), actorId: $request->user()?->id, description: $data['description'] ?? null);
+        $credit->handle($account, Money::fromInt((int) $data['amount']), actorId: $request->user()?->id, description: $data['description'] ?? null);
 
         return back()->with('status', 'Compte crédité.');
     }

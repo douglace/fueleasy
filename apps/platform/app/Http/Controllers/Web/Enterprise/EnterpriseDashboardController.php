@@ -165,7 +165,7 @@ class EnterpriseDashboardController extends Controller
             'amount' => ['required', 'integer', 'min:0'],
         ]);
 
-        $setBudget->handle($driver, BudgetMode::from($data['mode']), Money::fromInt($data['amount']), $request->user()?->id);
+        $setBudget->handle($driver, BudgetMode::from($data['mode']), Money::fromInt((int) $data['amount']), $request->user()?->id);
 
         return back()->with('status', 'Budget mis à jour.');
     }

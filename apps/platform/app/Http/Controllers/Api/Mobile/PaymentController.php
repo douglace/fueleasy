@@ -67,7 +67,7 @@ class PaymentController extends Controller
         ]);
 
         $context = $this->resolveContext($data, $resolveScan, $resolvePumpCode);
-        $payment = $create->handle($driver, $context, FuelType::from($data['fuel_type']), Money::fromInt($data['amount']));
+        $payment = $create->handle($driver, $context, FuelType::from($data['fuel_type']), Money::fromInt((int) $data['amount']));
 
         return (new PaymentResource($payment))->response()->setStatusCode(201);
     }

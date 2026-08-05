@@ -1,5 +1,15 @@
 # Lessons — apps/platform
 
+## 2026-08-05 — `Money::fromInt` TypeError : les formulaires web envoient des montants en string
+
+**Symptôme** : ajout de budget chauffeur (et crédit de compte carburant) → `Money::fromInt(): Argument #1 ($amount) must be of type int, string given` (`EnterpriseDashboardController.php:168`, `AdminDashboardController.php:216`). Idem potentiel côté API mobile `PaymentController.php:70`.
+
+**Cause** : la règle de validation Laravel `'amount' => ['required','integer',…]` **ne convertit pas** la valeur ; un POST HTTP de formulaire arrive en `string` (contrairement aux tests PHPUnit qui passaient des `int`). `Money::fromInt(int)` avec `declare(strict_types=1)` lève alors un TypeError.
+
+**Correction** : caster au site d'appel `Money::fromInt((int) $data['amount'])` dans les 3 contrôleurs ; les tests web de `DashboardsTest` envoient désormais les montants en **string** pour reproduire le comportement réel du navigateur (régression).
+
+**Pour la prochaine fois** : toute entrée HTTP « quantité/montant » utilisée dans une méthode typée `int` doit être castée après validation ; écrire les tests web avec des valeurs string, pas des ints PHP.
+
 ## 2026-07-07 — Gate CI masquée par un pipe ; callback http_mock_adapter exécuté à l'enregistrement
 
 **Symptôme** : (1) `composer ci:check 2>&1 | tail` annoncé « exit 0 » alors que PHPUnit avait échoué (136 tests KO, base Postgres arrêtée) — la porte de sortie avant commit était un faux positif. (2) Côté mobile, un test `http_mock_adapter` qui posait un flag dans le callback `onPost('…/close', (server) { called = true; … })` voyait le flag à `true` sans qu'aucune requête ne parte.

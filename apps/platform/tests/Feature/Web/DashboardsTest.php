@@ -47,8 +47,10 @@ class DashboardsTest extends TestCase
         $enterprise = Organization::factory()->enterprise()->create();
         FuelAccount::factory()->create(['organization_id' => $enterprise->id, 'balance' => 0]);
 
+        // Les formulaires web envoient des montants en string : on reproduit le
+        // comportement réel (régression « Money::fromInt must be of type int »).
         $this->actingAs($admin)->post('/admin/fuel-credits', [
-            'organization_id' => $enterprise->id, 'amount' => 500_000,
+            'organization_id' => $enterprise->id, 'amount' => '500000',
         ])->assertRedirect();
 
         $this->assertSame(500_000, (int) FuelAccount::query()->where('organization_id', $enterprise->id)->value('balance'));
@@ -77,7 +79,7 @@ class DashboardsTest extends TestCase
         $this->assertTrue($driver->pin_is_temporary);
 
         $this->actingAs($admin)->post("/enterprise/drivers/{$driver->id}/budget", [
-            'mode' => 'weekly', 'amount' => 60_000,
+            'mode' => 'weekly', 'amount' => '60000',
         ])->assertRedirect();
 
         $this->assertSame(60_000, DriverBudget::query()->where('user_id', $driver->id)->value('balance'));
@@ -91,7 +93,7 @@ class DashboardsTest extends TestCase
         $driverB = User::factory()->driver($orgB)->create();
 
         $this->actingAs($adminA)->post("/enterprise/drivers/{$driverB->id}/budget", [
-            'mode' => 'manual', 'amount' => 10_000,
+            'mode' => 'manual', 'amount' => '10000',
         ])->assertForbidden();
     }
 
