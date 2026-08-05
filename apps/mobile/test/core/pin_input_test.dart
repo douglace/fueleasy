@@ -27,10 +27,7 @@ void main() {
       final controller = TextEditingController();
       await tester.pumpWidget(
         _wrap(
-          PinInput(
-            controller: controller,
-            onCompleted: (v) => completed = v,
-          ),
+          PinInput(controller: controller, onCompleted: (v) => completed = v),
         ),
       );
 
@@ -54,29 +51,30 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('masque les chiffres par défaut, les affiche si obscure=false', (
-      tester,
-    ) async {
-      final controller = TextEditingController();
-      await tester.pumpWidget(_wrap(PinInput(controller: controller)));
+    testWidgets(
+      'masque les chiffres par défaut, les affiche si obscure=false',
+      (tester) async {
+        final controller = TextEditingController();
+        await tester.pumpWidget(_wrap(PinInput(controller: controller)));
 
-      await tester.enterText(find.byType(TextField), '7');
-      await tester.pump();
-      expect(_dotCount(tester), 1);
+        await tester.enterText(find.byType(TextField), '7');
+        await tester.pump();
+        expect(_dotCount(tester), 1);
 
-      await tester.pumpWidget(
-        _wrap(PinInput(controller: controller, obscure: false)),
-      );
-      await tester.pump();
-      expect(_dotCount(tester), 0);
-      final visible = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .toList();
-      expect(visible, contains('7'));
+        await tester.pumpWidget(
+          _wrap(PinInput(controller: controller, obscure: false)),
+        );
+        await tester.pump();
+        expect(_dotCount(tester), 0);
+        final visible = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .toList();
+        expect(visible, contains('7'));
 
-      controller.dispose();
-    });
+        controller.dispose();
+      },
+    );
 
     testWidgets('affiche la case active (curseur) sur la position courante', (
       tester,
@@ -101,10 +99,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SizedBox(
-              width: 328,
-              child: PinInput(controller: controller),
-            ),
+            body: SizedBox(width: 328, child: PinInput(controller: controller)),
           ),
         ),
       );
@@ -124,10 +119,12 @@ void main() {
       // Rangée centrée : le premier emplacement ne colle pas au bord gauche.
       final inputTopLeft = tester.getTopLeft(find.byType(PinInput));
       final firstUnderlineTopLeft = tester.getTopLeft(
-        find.descendant(
-          of: find.byType(PinInput),
-          matching: find.byType(AnimatedContainer),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(PinInput),
+              matching: find.byType(AnimatedContainer),
+            )
+            .first,
       );
       expect(firstUnderlineTopLeft.dx - inputTopLeft.dx, greaterThan(20));
 
