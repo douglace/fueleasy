@@ -107,11 +107,11 @@ jobs:
 
       - name: Build AAB (App Bundle)
         working-directory: apps/mobile
-        run: flutter build appbundle --release --dart-define=API_URL=https://api.fueleasy.app
+        run: flutter build appbundle --release --dart-define=API_BASE_URL=https://fusy.velko-pos.com
 
       - name: Build APK
         working-directory: apps/mobile
-        run: flutter build apk --release --dart-define=API_URL=https://api.fueleasy.app
+        run: flutter build apk --release --dart-define=API_BASE_URL=https://fusy.velko-pos.com
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
@@ -175,7 +175,7 @@ jobs:
 
       - name: Build IPA
         working-directory: apps/mobile
-        run: flutter build ipa --release --dart-define=API_URL=https://api.fueleasy.app --export-options-plist=ios/ExportOptions.plist
+        run: flutter build ipa --release --dart-define=API_BASE_URL=https://fusy.velko-pos.com --export-options-plist=ios/ExportOptions.plist
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4

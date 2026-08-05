@@ -32,10 +32,19 @@ class _RevealBudgetSheetState extends ConsumerState<_RevealBudgetSheet> {
   bool _submitting = false;
   String? _errorMessage;
 
+  /// True pendant un clear() programmatique du PIN : la notification du
+  /// controller ne doit pas effacer le message d'erreur affiché.
+  bool _clearing = false;
+
   @override
   void initState() {
     super.initState();
-    _pinController.addListener(() => setState(() {}));
+    _pinController.addListener(_onPinEdited);
+  }
+
+  void _onPinEdited() {
+    if (_clearing) return;
+    setState(() => _errorMessage = null);
   }
 
   @override
@@ -57,7 +66,9 @@ class _RevealBudgetSheetState extends ConsumerState<_RevealBudgetSheet> {
       if (mounted) Navigator.of(context).pop(reveal);
     } on Failure catch (f) {
       setState(() => _errorMessage = f.message);
+      _clearing = true;
       _pinController.clear();
+      _clearing = false;
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

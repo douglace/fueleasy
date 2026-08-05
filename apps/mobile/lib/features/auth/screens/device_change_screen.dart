@@ -35,6 +35,10 @@ class _DeviceChangeScreenState extends ConsumerState<DeviceChangeScreen> {
   String? _errorMessage;
   String? _infoMessage;
 
+  /// True pendant un clear() programmatique d'un code : la notification du
+  /// controller ne doit pas effacer le message d'erreur affiché.
+  bool _clearing = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +52,12 @@ class _DeviceChangeScreenState extends ConsumerState<DeviceChangeScreen> {
     }
   }
 
-  void _onFieldsChanged() => setState(() {});
+  void _onFieldsChanged() {
+    if (_clearing) return;
+    setState(() {
+      _errorMessage = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -87,7 +96,9 @@ class _DeviceChangeScreenState extends ConsumerState<DeviceChangeScreen> {
       });
     } on Failure catch (f) {
       setState(() => _errorMessage = f.message);
+      _clearing = true;
       _pinController.clear();
+      _clearing = false;
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -110,7 +121,9 @@ class _DeviceChangeScreenState extends ConsumerState<DeviceChangeScreen> {
       // Redirection vers le bon shell gérée par le routeur.
     } on Failure catch (f) {
       setState(() => _errorMessage = f.message);
+      _clearing = true;
       _smsCodeController.clear();
+      _clearing = false;
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

@@ -31,6 +31,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _errorMessage;
   bool _needsActivation = false;
 
+  /// True pendant un clear() programmatique du PIN : la notification du
+  /// controller ne doit pas effacer le message d'erreur affiché.
+  bool _clearing = false;
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +47,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _onFieldsChanged() => setState(() {});
+  void _onFieldsChanged() {
+    if (_clearing) return;
+    setState(() {
+      // Toute nouvelle saisie après une erreur efface le message (et le rouge
+      // sur les cases PIN) : la rétroaction d'erreur disparaît quand on corrige.
+      _errorMessage = null;
+      _needsActivation = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -82,7 +94,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _errorMessage = f.message;
         _needsActivation = needsActivation;
       });
+      _clearing = true;
       _pinController.clear();
+      _clearing = false;
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

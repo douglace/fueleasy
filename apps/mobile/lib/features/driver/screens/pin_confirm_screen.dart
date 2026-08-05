@@ -41,10 +41,26 @@ class _PinConfirmScreenState extends ConsumerState<PinConfirmScreen> {
   bool _navigated = false;
   String? _errorMessage;
 
+  /// Erreur portant sur le PIN lui-même (case rouge + shake). Les erreurs
+  /// réseau/informatiques n'affectent pas la case : seule le message s'affiche.
+  bool _pinHasError = false;
+
+  /// True pendant un clear() programmatique du PIN : on ne veut PAS que la
+  /// notification du controller efface le message d'erreur qu'on vient d'afficher.
+  bool _clearing = false;
+
   @override
   void initState() {
     super.initState();
-    _pinController.addListener(() => setState(() {}));
+    _pinController.addListener(_onPinEdited);
+  }
+
+  void _onPinEdited() {
+    if (_clearing) return;
+    setState(() {
+      _errorMessage = null;
+      _pinHasError = false;
+    });
   }
 
   @override
@@ -94,8 +110,13 @@ class _PinConfirmScreenState extends ConsumerState<PinConfirmScreen> {
         return;
       }
       if (reason == PaymentFailureReason.invalidPin) {
-        setState(() => _errorMessage = f.message);
+        setState(() {
+          _errorMessage = f.message;
+          _pinHasError = true;
+        });
+        _clearing = true;
         _pinController.clear();
+        _clearing = false;
         return;
       }
       // pin_locked ou toute autre vérification ré-évaluée à la confirmation.
@@ -195,7 +216,7 @@ class _PinConfirmScreenState extends ConsumerState<PinConfirmScreen> {
               PinInput(
                 controller: _pinController,
                 autofocus: true,
-                hasError: _errorMessage != null,
+                hasError: _pinHasError,
                 onCompleted: (_) => _confirm(),
               ),
               const SizedBox(height: AppSpacing.xl),

@@ -15,14 +15,19 @@ backend Laravel `apps/platform` (`/api/v1/mobile`).
 
 ## Configuration du backend (URL)
 
-L'URL de l'API est injectée au build via `--dart-define=API_BASE_URL` (défaut
-`http://localhost:8000`) :
+L'URL de l'API se résout ainsi (voir `lib/core/config/app_config.dart`) :
 
-| Cible | Valeur |
+1. **Override explicite** : `--dart-define=API_BASE_URL=...` (toujours prioritaire).
+2. **Défaut selon le mode de build** :
+   - **release** (production) : `https://fusy.velko-pos.com`
+   - **debug/profile** : `http://localhost:8000`
+
+| Cible | Commande / valeur |
 |---|---|
-| Simulateur iOS | `http://localhost:8000` |
-| Émulateur Android | `http://10.0.2.2:8000` |
-| Appareil physique | `http://IP_LAN_DE_LA_MACHINE:8000` |
+| Production (release, défaut) | `flutter build apk --release` → `https://fusy.velko-pos.com` |
+| Simulateur iOS | `flutter run --dart-define=API_BASE_URL=http://localhost:8000` |
+| Émulateur Android | `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000` |
+| Appareil physique | `flutter run --dart-define=API_BASE_URL=http://IP_LAN_DE_LA_MACHINE:8000` |
 
 ## Commandes
 
@@ -36,8 +41,8 @@ Toutes depuis `apps/mobile/` (avec le PATH Flutter exporté) :
 | Analyse statique | `flutter analyze` |
 | Formatage | `dart format .` |
 | Tests | `flutter test` |
-| Build APK (Android) | `flutter build apk --dart-define=API_BASE_URL=...` |
-| Build iOS | `flutter build ios --dart-define=API_BASE_URL=...` |
+| Build APK (Android) | `flutter build apk --dart-define=API_BASE_URL=...` — sans `--dart-define`, l'APK release pointe vers la production `https://fusy.velko-pos.com` |
+| Build iOS | `flutter build ios --dart-define=API_BASE_URL=...` — idem, release → production par défaut |
 
 > Android : les `cmdline-tools` du SDK Android doivent être installés (via Android Studio
 > ou le paquet cmdline-tools + `ANDROID_HOME`) avant de builder pour Android.

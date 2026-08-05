@@ -41,9 +41,16 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   final _temporaryPinController = TextEditingController();
   final _newPinController = TextEditingController();
   final _confirmPinController = TextEditingController();
+  final _temporaryPinFocus = FocusNode();
+  final _newPinFocus = FocusNode();
+  final _confirmPinFocus = FocusNode();
 
   bool _submitting = false;
   String? _errorMessage;
+
+  /// True pendant un clear() programmatique des PIN : la notification des
+  /// controllers ne doit pas effacer le message d'erreur affiché.
+  bool _clearing = false;
 
   bool get _prefilled =>
       (widget.initialOrganizationCode ?? '').isNotEmpty &&
@@ -63,7 +70,12 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     }
   }
 
-  void _onFieldsChanged() => setState(() {});
+  void _onFieldsChanged() {
+    if (_clearing) return;
+    setState(() {
+      _errorMessage = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -72,6 +84,9 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     _temporaryPinController.dispose();
     _newPinController.dispose();
     _confirmPinController.dispose();
+    _temporaryPinFocus.dispose();
+    _newPinFocus.dispose();
+    _confirmPinFocus.dispose();
     super.dispose();
   }
 
@@ -103,9 +118,11 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
           );
     } on Failure catch (f) {
       setState(() => _errorMessage = f.message);
+      _clearing = true;
       _temporaryPinController.clear();
       _newPinController.clear();
       _confirmPinController.clear();
+      _clearing = false;
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -163,7 +180,9 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
                 const SizedBox(height: AppSpacing.xs),
                 PinInput(
                   controller: _temporaryPinController,
+                  focusNode: _temporaryPinFocus,
                   autofocus: _prefilled,
+                  onCompleted: (_) => _newPinFocus.requestFocus(),
                 ),
               ],
             ),
@@ -179,13 +198,21 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Nouveau PIN', style: AppTypography.label),
                 const SizedBox(height: AppSpacing.xs),
-                PinInput(controller: _newPinController),
+                PinInput(
+                  controller: _newPinController,
+                  focusNode: _newPinFocus,
+                  onCompleted: (_) => _confirmPinFocus.requestFocus(),
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Confirmer le nouveau PIN', style: AppTypography.label),
                 const SizedBox(height: AppSpacing.xs),
                 PinInput(
                   controller: _confirmPinController,
+                  focusNode: _confirmPinFocus,
                   hasError: showMismatch,
+                  onCompleted: (_) {
+                    if (_pinsMatch) _submit();
+                  },
                 ),
                 if (showMismatch) ...[
                   const SizedBox(height: AppSpacing.xs),
